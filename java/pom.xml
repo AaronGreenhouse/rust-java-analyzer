@@ -27,6 +27,20 @@
                         <arg>-Xdoclint:all</arg>
                     </compilerArgs>
                 </configuration>
+                <executions>
+                    <!-- The test cases are inputs for the analyzer. Doc comments on every
+                         declaration would bury the comments that mark expected results,
+                         so the test sources skip only doclint's "missing" check. -->
+                    <execution>
+                        <id>default-testCompile</id>
+                        <configuration>
+                            <compilerArgs combine.self="override">
+                                <arg>-Xlint:all</arg>
+                                <arg>-Xdoclint:all,-missing</arg>
+                            </compilerArgs>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
