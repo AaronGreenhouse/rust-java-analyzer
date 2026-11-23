@@ -1,15 +1,32 @@
 # rust-java-analyzer
 
+A static analyzer for Java source code, written in Rust.
+
 ## Overview
 
-Simple analyzer for Java programs written in Rust.
+The goal is to build, in Rust, an analyzer that checks Java source code against a new `@Immutable` annotation.
 
-More specficially, the plan here is to create in Rust an analyzer for Java source code that checks a new @Immutable annotation.  This is an annotation that can be checked purely by syntactic checks.  I cannot do anything more complicated because I would have to have a full Java control flow graph, and to the best of my knowledge there is no open source implementation of such a thing, but there is a an open source parser and AST.
+`@Immutable` was chosen because it can be checked with purely syntactic checks. Anything more complex would need a full Java control-flow graph. As far as I know, no open-source implementation of one exists, but there is an open-source Java parser and AST.
 
-This repo will have both Rust (`rust/`) and Java ('java/') source trees.  In particular, the Java source tree will contain the Immutable annotation as well as the test cases for the annotation.
+## Repository layout
 
-The directory `analyses` contains the descriptions of all the implemented analyses; right now there is 1. The idea is to use the descriptions to drive the implementation of the analyses, including the derivation of any necessaray annotation classes and the generation of source java files to use as test cases.
+| Path | Contents |
+| --- | --- |
+| [`rust/`](rust/) | The analyzer, written in Rust. |
+| [`java/`](java/) | The Java side: the `@Immutable` annotation and the test cases for it. |
+| [`analyses/`](analyses/) | One description per analysis. These drive the implementation, including the annotation classes and the Java test files. |
+| [`claude-prompt-log.md`](claude-prompt-log.md) | A log of every Claude Code prompt and response (see [Development with Claude](#development-with-claude)). |
 
-## About `Immutable`
+## Analyses
 
-Please see the file `Immutable.md` for a description of the immutable analysis.
+| Analysis | Description |
+| --- | --- |
+| Immutable | Checks that instances of a class or interface marked `@Immutable` can't change after they are created. See [`analyses/Immutable.md`](analyses/Immutable.md). |
+
+## Status
+
+Early stage. The analysis is specified, but there is no implementation yet.
+
+## Development with Claude
+
+The intent is to have Claude Code do as much of the work as possible. To keep a record of how that goes, a Claude Code hook ([`.claude/hooks/prompt-log.sh`](.claude/hooks/prompt-log.sh)) adds every prompt and response to [`claude-prompt-log.md`](claude-prompt-log.md).
