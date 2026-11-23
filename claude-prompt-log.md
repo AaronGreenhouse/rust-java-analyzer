@@ -283,3 +283,57 @@ No other files mentioned a package, and the `java/` directory is still empty, so
 ### Prompt
 
 commit, but do not push
+
+### Response
+
+I committed the package changes as `775829d` and didn't push it. It's the only local commit not yet on GitHub.
+
+The commit is on the branch `1-create-the-immutable-annotation`, not `main`, because that's the branch you currently have checked out. If you meant it to go on `main`, I can move it.
+
+The commit includes [CLAUDE.md](CLAUDE.md), [analyses/Immutable.md](analyses/Immutable.md), and the prompt log entries since the last commit.
+
+## 2026-11-23 15:16 EST
+
+### Prompt
+
+create the Immutable annotation in the java directory
+
+### Response
+
+I created the annotation in [Immutable.java](java/src/main/java/io/github/aarongreenhouse/promises/Immutable.java), following [analyses/Immutable.md](analyses/Immutable.md). It compiles with no warnings using `javac` 26 with all lint and Javadoc checks turned on. I compiled it into the scratchpad, so no build output is in the repo.
+
+**What it contains:**
+- The type is `io.github.aarongreenhouse.promises.Immutable`.
+- It's annotated `@Target(ElementType.TYPE)`, `@Retention(RetentionPolicy.CLASS)` and `@Documented`, and not `@Inherited`, as the description requires.
+- Its Javadoc summarizes the rules and points to `analyses/Immutable.md` for the full version. It states the lambda rule the way it will actually be checked: an immutable interface must not be a functional interface.
+
+**Location:** I used the standard Maven layout (`java/src/main/java/...`), as in `livephotos`, so the Java test cases can go in `java/src/test/java` later.
+
+There's no build file yet. A `pom.xml` in `java/` is the obvious next step once you add the test cases; tell me if you want one now. Nothing is committed. Issue #1 will stay open until this reaches `main`, either by merging the branch or with a "Closes #1" line in the pull request.
+
+## 2026-11-23 15:18 EST
+
+### Prompt
+
+<ide_opened_file>The user opened the file /Users/aaron/VSCode Examples/rust-java-analyzer/java/src/main/java/io/github/aarongreenhouse/promises/Immutable.java in the IDE. This may or may not be related to the current task.</ide_opened_file>
+create a build file
+
+### Response
+
+I created a Maven build file, [java/pom.xml](java/pom.xml), modeled on the one in `livephotos`. `mvn package` succeeds with no warnings and produces `java/target/promises-1.0-SNAPSHOT.jar` containing the `Immutable` annotation.
+
+**What's in it:**
+- **Coordinates:** `io.github.aarongreenhouse:promises:1.0-SNAPSHOT`, matching the package name.
+- **Java 26 and UTF-8**, the same as `livephotos`.
+- **All `javac` lint and Javadoc checks turned on**, so problems in the annotation types or test cases show up as warnings.
+- **No dependencies yet.** I left out JUnit because nothing uses it so far. The Java test cases may just be input files for the Rust analyzer rather than JUnit tests.
+
+**One more file:** I added a top-level [.gitignore](.gitignore) that ignores `java/target/`, so Maven's build output isn't committed. Your global ignore file only covers Claude's local settings.
+
+Java 26 means anyone using the jar needs Java 26 or later. If you want the annotation and test cases usable on older JDKs, Java 21 is the oldest version with every feature the rules mention, such as records and sealed classes. Nothing is committed yet.
+
+## 2026-11-23 15:20 EST
+
+### Prompt
+
+commit and push
