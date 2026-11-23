@@ -40,6 +40,7 @@ Rule IMM-MARK: A type is considered immutable if and only if its declaration is 
 ### Supertypes
 
 Rule IMM-SUPERCLASS: If a class is immutable, its direct superclass must be one of:
+
 - `java.lang.Object`
 - `java.lang.Enum`, for an enum
 - `java.lang.Record`, for a record
