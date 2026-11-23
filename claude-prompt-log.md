@@ -343,3 +343,148 @@ commit and push
 I committed the annotation and build file as `35cf2df` and pushed the branch `1-create-the-immutable-annotation` to GitHub. The push also included `775829d`, the package-name commit you'd asked me to hold back earlier. The branch is now in sync with GitHub.
 
 The commit contains the `Immutable` annotation, [java/pom.xml](java/pom.xml), [.gitignore](.gitignore), and the prompt log entries since the last commit. Its message says "Refs #1", which links it to the issue without closing it. Issue #1 will close once this branch is merged into `main`, for example through a pull request that says "Closes #1".
+
+## 2026-11-23 15:31 EST
+
+### Prompt
+
+<ide_selection>The user selected the lines 6 to 6 from /Users/aaron/VSCode Examples/rust-java-analyzer/CLAUDE.md:
+io.github.aarongreenhouse
+
+This may or may not be related to the current task.</ide_selection>
+what would be a good Java package name for the package that holds all the java source code used to test analysis behavior?
+
+### Response
+
+I'd use **`io.github.aarongreenhouse.testcases`**, with one subpackage per analysis:
+
+```
+io.github.aarongreenhouse.testcases.immutable
+```
+
+Why:
+
+- **It's a sibling of `promises`, not under it.** `promises` holds the annotations that users depend on. The test inputs are a separate thing and shouldn't look like part of that API.
+- **"testcases" is more accurate than "test" or "tests".** These files are inputs for the Rust analyzer, not JUnit tests. "tests" would suggest something you run with `mvn test`.
+- **Subpackages per analysis scale.** When you add a second analysis, its cases get their own subpackage, and the analyzer can be pointed at one subpackage at a time.
+- **Subpackages can be split further later if needed.** If the immutable cases grow, you could group them by rule, for example `...testcases.immutable.superclass` and `...testcases.immutable.fieldtype`, or into `good` and `bad`. A flat package is fine to start.
+
+One related choice is where the files go. I'd put them under `java/src/test/java/`. Maven still compiles them, so every test case is checked to be legal Java with no lint warnings. But they stay out of the `promises` jar, and they can use `@Immutable` from the main sources without extra setup.
+
+If you want, I can add this convention to [CLAUDE.md](CLAUDE.md) next to the `promises` rule.
+
+## 2026-11-23 15:33 EST
+
+### Prompt
+
+do it
+
+### Response
+
+I added the test-case convention to [CLAUDE.md](CLAUDE.md), right after the `promises` rule. It says that:
+
+- Test-case code goes in `io.github.aarongreenhouse.testcases`, with one subpackage per analysis (for example `...testcases.immutable`).
+- The files go under `java/src/test/java/`.
+
+I haven't committed the change.
+
+## 2026-11-23 15:34 EST
+
+### Prompt
+
+commit, but do not push
+
+### Response
+
+I committed the [CLAUDE.md](CLAUDE.md) change as c7dbdf7 on branch `2-create-java-test-cases`, and didn't push it.
+
+The commit includes only `CLAUDE.md`. The prompt log has uncommitted changes, which I left out.
+
+## 2026-11-23 15:40 EST
+
+### Prompt
+
+Create an exhaustive set of testcases for the Immutable analysis (immutable.md) based on the named rules.  Tests should validate rule satisfaction, as well as rule violation.  If a rule can be violated mutiple ways, test each one.  The Java source code should be commented to indicate which rule is being tested, whetehr the test is for satisfaction or violation, and in what way the rule is being violated.  This indication should be as close to the syntactic location of the relevant test as possible.  Use subpackages based on rule grouping.
+
+### Response
+
+I added test cases for every rule in [Immutable.md](analyses/Immutable.md), under [java/src/test/java/io/github/aarongreenhouse/testcases/immutable/](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/). There are 40 Java files. `mvn package` builds them with no javac or doclint warnings, and they stay out of the `promises` jar. Nothing is committed.
+
+**How the tests are marked**
+
+The markers are line comments directly before the code each result is about: the type declaration, an `extends`/`implements` clause, a field, a single declarator, a record component, an enum constant, or a `new` expression. I split declarations across lines where that gets the comment closer.
+
+Each marker takes one of three forms:
+- `// IMM-RULE satisfied: <case>`
+- `// IMM-RULE violated: <how>`
+- `// IMM-RULE not applicable: <why>`, for code that looks like the rule might apply but doesn't
+
+The format is fixed, so a test harness can parse it later. Every expected error is marked, including errors from rules other than the one a file tests. The format and these rules are written up in the [top-level package-info.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/package-info.java).
+
+**Subpackages, one per section of the analysis description**
+
+| Package | Rules | Satisfied | Violated |
+| --- | --- | --- | --- |
+| `marker` (+ `marker.decoy`) | IMM-MARK | 12 types counted immutable | 7 types not counted immutable |
+| `supertypes` | IMM-SUPERCLASS, IMM-SUPERINTERFACE | 17 | 11 |
+| `subtypes` | IMM-SUBINTERFACE, IMM-SUBCLASS | 31 | 26 |
+| `finalfields` | IMM-FINAL-INTERFACE, IMM-FINAL-CLASS | 25 | 12 |
+| `fieldtypes` | IMM-FIELD-TYPE | 34 | 36 |
+| `nested` | IMM-INNER | 10 | 11 |
+| `anonymous` | IMM-ANONYMOUS, IMM-LAMBDA | 10 | 28 |
+
+The counts are by marker, so they can include results from other rules within a package. IMM-MARK has no results of its own; its markers say whether a type counts as immutable.
+
+Some of the trickier cases:
+- A decoy `@Immutable` in a different package. In its own package, the decoy shadows `import promises.*`.
+- The declarator `final int width = 0, heights[] = {};`, where `heights` has type `int[]`.
+- A record with a varargs component, whose field type is an array.
+- A local class in a static method, which is still an inner class.
+- An empty enum constant body, `MEDIUM(2) {}`.
+- Two `IMM-LAMBDA` traps: `Object clone()` counts as an abstract method, and `equals(Comparer)` is not `Object`'s `equals`.
+- A default method that leaves exactly one abstract method.
+- The same `read()` inherited from two superinterfaces, which counts once.
+
+IMM-FINAL-INTERFACE can't be violated in legal Java, so it has only satisfied tests.
+
+**Build changes**
+
+- In [pom.xml](java/pom.xml), test compilation now uses `-Xdoclint:all,-missing`. Without that, every undocumented helper type in the tests caused a warning. The main sources still get full doclint.
+- Each test file is self-contained, because referencing a helper type from another file triggers the `auxiliaryclass` lint warning.
+- Maven still warns that `maven-compiler-plugin` has no `<version>`. That warning predates this change and comes from Maven, not javac. Pinning a version fixes it.
+
+**Gaps in the description the tests had to fill**
+
+Where the description is silent or ambiguous, I picked an answer and listed it in the top-level package-info. You may want to add these to [Immutable.md](analyses/Immutable.md):
+1. **Sealed interfaces:** an interface declared `sealed` is never a functional interface (JLS §9.8, checked with javac 26). So a sealed immutable interface with one abstract method passes IMM-LAMBDA.
+2. **Indirect subtypes:** the tests assume IMM-SUBCLASS and IMM-SUBINTERFACE cover indirect subtypes, as the JLS uses "subclass." An unmarked class two levels down is reported even when the class between them is also reported.
+3. **Anonymous classes:** they are reported only under IMM-ANONYMOUS, not also under IMM-SUBCLASS or IMM-SUBINTERFACE.
+4. **Marked inner subclasses:** the tests expect an IMM-INNER error and a satisfied IMM-SUBCLASS. The description says such a class is "always an error under IMM-SUBCLASS," which only holds when it is unmarked.
+5. **Records and enums:** the tests treat a record, or an enum with no constant bodies, as trivially satisfying IMM-SUBCLASS. They are implicitly final, but the description mentions only classes *declared* `final`.
+
+## 2026-11-23 16:32 EST
+
+### Prompt
+
+update Immutable.md to address the gaps
+
+### Response
+
+I updated [Immutable.md](analyses/Immutable.md) to cover all five gaps:
+
+1. **Sealed interfaces:** the IMM-LAMBDA implementation note now defines a functional interface as one that is not declared `sealed` and has exactly one abstract method (JLS §9.8). It includes an example of a sealed immutable interface that passes.
+2. **Indirect subtypes:** the Subtypes section now says IMM-SUBCLASS and IMM-SUBINTERFACE cover indirect subtypes (JLS §8.1.4, §9.1.3), and that a class implements an interface even when the interface comes through a superclass (JLS §8.1.5). An example shows two unmarked subclasses in a chain both being reported.
+3. **Anonymous classes:** the Subtypes section says anonymous classes and enum constant bodies are reported only under IMM-ANONYMOUS.
+4. **Inner subclasses:** the Nested classes section now says an inner subtype of an immutable type is always an error. If it is unmarked, the error is under IMM-SUBCLASS or IMM-SUBINTERFACE. If it is marked, it satisfies those rules and the error is under IMM-INNER.
+5. **Records and enums:** the list of classes that trivially satisfy IMM-SUBCLASS now includes records and enums whose constants have no class bodies, alongside classes declared `final`.
+
+The [test package-info.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/package-info.java) used to describe these points as assumptions the tests made. It now lists them as points from the description that decide where results are expected. The test sources still compile with no warnings.
+
+None of this is committed yet. That includes the test cases and the [pom.xml](java/pom.xml) change.
+
+## 2026-11-23 16:35 EST
+
+### Prompt
+
+<ide_opened_file>The user opened the file /Users/aaron/VSCode Examples/rust-java-analyzer/claude-prompt-log.md in the IDE. This may or may not be related to the current task.</ide_opened_file>
+commit and push

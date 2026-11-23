@@ -68,7 +68,23 @@ Rule IMM-SUBINTERFACE: If an interface is immutable then all its subinterfaces a
 
 Rule IMM-SUBCLASS: If a class is immutable then all its subclasses must be immutable. It is an error if there exists a subclass that is not marked as immutable. Subclasses that are marked as immutable should receive a positive result that they satisfy the requirement.
 
-Both rules apply to the analyzed source only (see [Scope](#scope)). A class declared `final` trivially satisfies IMM-SUBCLASS and is positively marked as such.
+Both rules apply to the analyzed source only (see [Scope](#scope)).
+
+Both rules cover indirect subtypes as well as direct ones, as the JLS does when it uses "subclass" and "subinterface" (JLS §8.1.4, §9.1.3). A class implements an interface if it, or any of its superclasses, has the interface as a direct or indirect superinterface (JLS §8.1.5). An unmarked indirect subtype is reported even when a type between it and the immutable type is also reported:
+
+```java
+@Immutable class Account {}
+class Savings extends Account {}        // error: subclass of Account is not marked
+class HighYield extends Savings {}      // error: indirect subclass of Account is not marked
+```
+
+Anonymous classes, including enum constants with a class body, are not reported under these rules. They are covered by IMM-ANONYMOUS instead (see [Anonymous classes, lambdas, and method references](#anonymous-classes-lambdas-and-method-references)).
+
+A class that can have no subclasses trivially satisfies IMM-SUBCLASS and is positively marked as such. These are:
+
+- a class declared `final`
+- a record, which is implicitly final (JLS §8.10)
+- an enum none of whose constants has a class body, which is implicitly final (JLS §8.9)
 
 ### Fields must be final
 
@@ -131,7 +147,7 @@ Nested enums, records, and interfaces are implicitly `static` (JLS §8.9, §8.10
 
 A `static` nested class declared inside an immutable type is not part of that type's state, so it does not need to be immutable itself.
 
-Since an inner class cannot be immutable, an inner class that extends an immutable class or implements an immutable interface is always an error under IMM-SUBCLASS or IMM-SUBINTERFACE.
+Since an inner class cannot be immutable, an inner class that extends an immutable class or implements an immutable interface is always an error. If it is not marked, the error is under IMM-SUBCLASS or IMM-SUBINTERFACE. If it is marked, it satisfies those rules, and the error is under IMM-INNER.
 
 ### Anonymous classes, lambdas, and method references
 
@@ -159,7 +175,13 @@ An enum constant with a class body is an anonymous class whose superclass is the
 
 Rule IMM-LAMBDA: It is an error for a lambda expression or method reference to have an immutable interface as its target type.
 
-Implementation note: IMM-LAMBDA should be implemented by checking declarations instead of lambdas and method references. A lambda or method reference can only have a functional interface as its target type (JLS §15.27.3, §15.13.2). So it is enough, and still sound, to report an error for any immutable interface that is a functional interface, at the interface's declaration. A functional interface is one with exactly one abstract method, counting abstract methods inherited from superinterfaces (JLS §9.8). Default and static methods do not count, nor do abstract methods that match a public method of `java.lang.Object`, such as `equals`.
+Implementation note: IMM-LAMBDA should be implemented by checking declarations instead of lambdas and method references. A lambda or method reference can only have a functional interface as its target type (JLS §15.27.3, §15.13.2). So it is enough, and still sound, to report an error for any immutable interface that is a functional interface, at the interface's declaration. A functional interface is one that is not declared `sealed` and has exactly one abstract method, counting abstract methods inherited from superinterfaces (JLS §9.8). Default and static methods do not count, nor do abstract methods that match a public method of `java.lang.Object`, such as `equals`. A sealed immutable interface therefore satisfies IMM-LAMBDA even if it has exactly one abstract method:
+
+```java
+@Immutable sealed interface Expr permits Literal {   // OK: a sealed interface is not functional
+    int eval();
+}
+```
 
 This is simpler because the target type of a particular lambda or method reference comes from its context, and finding it in general requires overload resolution and type inference. The cost is that it is stricter than needed: an immutable functional interface is reported even if no lambda or method reference ever targets it. Checking each lambda and method reference precisely is listed under [Future work](#future-work).
 
