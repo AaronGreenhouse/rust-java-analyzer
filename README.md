@@ -6,7 +6,7 @@ A static analyzer for Java source code, written in Rust.
 
 The goal is to build, in Rust, an analyzer that checks Java source code against a new `@Immutable` annotation.
 
-`@Immutable` was chosen because it can be checked with purely syntactic checks. Anything more complex would need a full Java control-flow graph. As far as I know, no open-source implementation of one exists, but there is an open-source Java parser and AST.
+`@Immutable` was chosen because it can be checked with purely syntactic checks. Anything more complex would need a full Java control-flow graph. As far as I know, no open-source Rust implementation of one exists, but there is an open-source Java parser and AST.
 
 ## Repository layout
 
