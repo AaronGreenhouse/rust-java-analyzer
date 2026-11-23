@@ -664,3 +664,9 @@ Nothing is committed.
 ### Prompt
 
 commit and push
+
+### Response
+
+The logo work is committed as 27a8163 and pushed to `4-create-a-logo-for-the-project` on GitHub, the first push of that branch. The commit includes the logo files, the README changes, and the latest prompt log entries.
+
+The new social preview banner won't show up on GitHub until you upload `docs/logo/social-preview.png` yourself: on the repository's **Settings** page, look under **General** for **Social preview**.
