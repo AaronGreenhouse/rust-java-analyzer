@@ -234,3 +234,112 @@ tag the repository to indicate this is the baseline starting point for developin
 I tagged commit `61ef889` (the revised analysis description) as `baseline` and pushed the tag to GitHub. It's an annotated tag with the message "Baseline: analysis description complete, before implementation of the analysis begins."
 
 The prompt log entries added since that commit, including this exchange, aren't part of the tagged version. If you'd rather use a different name, such as `v0.0.0`, I can rename it. That means deleting the tag on GitHub and pushing the new one.
+
+## 2026-11-23 14:56 EST
+
+### Prompt
+
+<ide_opened_file>The user opened the file /Users/aaron/VSCode Examples/rust-java-analyzer/README.md in the IDE. This may or may not be related to the current task.</ide_opened_file>
+move the previously created tag to the current version
+
+### Response
+
+The `baseline` tag now points to `db7aa8d` ("Fixed missing word"), your latest commit. I moved it on GitHub as well, and checked that the tag there points to the same commit as your local `main`. It keeps the same message.
+
+The only change not in the tagged version is the new prompt log entries since your last commit.
+
+Moving a tag that's already on GitHub doesn't update anyone else's copy. If someone fetched the old `baseline`, they would need `git fetch --tags --force` to get the new one. That probably doesn't matter for a repo only you use.
+
+## 2026-11-23 15:13 EST
+
+### Prompt
+
+<ide_opened_file>The user opened the file /Users/aaron/VSCode Examples/rust-java-analyzer/CLAUDE.md in the IDE. This may or may not be related to the current task.</ide_opened_file>
+Please use the package prefix "io.github.aarongreenhouse" for all generated Java packages
+
+### Response
+
+I added the rule to [CLAUDE.md](CLAUDE.md#L6), so every future session will put Java packages under `io.github.aarongreenhouse`. I included `io.github.aarongreenhouse.immutable` as an example; that's only an illustration, not a package that exists. I haven't committed the change.
+
+[analyses/Immutable.md](analyses/Immutable.md) still doesn't name the `@Immutable` annotation's package. That matters because the analyzer recognizes the annotation by its fully qualified name. Do you want me to add the full name there, for example `io.github.aarongreenhouse.immutable.Immutable`?
+
+## 2026-11-23 15:15 EST
+
+### Prompt
+
+Lets use package io.github.aarongreenhouse.promises as the root package for analysis annotation types.  So update the existing files to use io.github.aarongreenhouse.promises.Immutable as the immutable marker type.
+
+### Response
+
+The immutable marker type is now `io.github.aarongreenhouse.promises.Immutable` in both files that mention it:
+
+- **[analyses/Immutable.md](analyses/Immutable.md#L28-L35):** the annotation section gives this as its fully qualified name. The sentence saying the analyzer matches the annotation by its full name now spells it out.
+- **[CLAUDE.md](CLAUDE.md#L6-L7):** analysis annotation types go in `io.github.aarongreenhouse.promises` or its subpackages, with `Immutable` as the example. This replaces the made-up `io.github.aarongreenhouse.immutable` example from my last change. The general `io.github.aarongreenhouse` prefix rule is still there.
+
+No other files mentioned a package, and the `java/` directory is still empty, so there's no Java code to change. Nothing is committed yet.
+
+## 2026-11-23 15:16 EST
+
+### Prompt
+
+commit, but do not push
+
+### Response
+
+I committed the package changes as `775829d` and didn't push it. It's the only local commit not yet on GitHub.
+
+The commit is on the branch `1-create-the-immutable-annotation`, not `main`, because that's the branch you currently have checked out. If you meant it to go on `main`, I can move it.
+
+The commit includes [CLAUDE.md](CLAUDE.md), [analyses/Immutable.md](analyses/Immutable.md), and the prompt log entries since the last commit.
+
+## 2026-11-23 15:16 EST
+
+### Prompt
+
+create the Immutable annotation in the java directory
+
+### Response
+
+I created the annotation in [Immutable.java](java/src/main/java/io/github/aarongreenhouse/promises/Immutable.java), following [analyses/Immutable.md](analyses/Immutable.md). It compiles with no warnings using `javac` 26 with all lint and Javadoc checks turned on. I compiled it into the scratchpad, so no build output is in the repo.
+
+**What it contains:**
+- The type is `io.github.aarongreenhouse.promises.Immutable`.
+- It's annotated `@Target(ElementType.TYPE)`, `@Retention(RetentionPolicy.CLASS)` and `@Documented`, and not `@Inherited`, as the description requires.
+- Its Javadoc summarizes the rules and points to `analyses/Immutable.md` for the full version. It states the lambda rule the way it will actually be checked: an immutable interface must not be a functional interface.
+
+**Location:** I used the standard Maven layout (`java/src/main/java/...`), as in `livephotos`, so the Java test cases can go in `java/src/test/java` later.
+
+There's no build file yet. A `pom.xml` in `java/` is the obvious next step once you add the test cases; tell me if you want one now. Nothing is committed. Issue #1 will stay open until this reaches `main`, either by merging the branch or with a "Closes #1" line in the pull request.
+
+## 2026-11-23 15:18 EST
+
+### Prompt
+
+<ide_opened_file>The user opened the file /Users/aaron/VSCode Examples/rust-java-analyzer/java/src/main/java/io/github/aarongreenhouse/promises/Immutable.java in the IDE. This may or may not be related to the current task.</ide_opened_file>
+create a build file
+
+### Response
+
+I created a Maven build file, [java/pom.xml](java/pom.xml), modeled on the one in `livephotos`. `mvn package` succeeds with no warnings and produces `java/target/promises-1.0-SNAPSHOT.jar` containing the `Immutable` annotation.
+
+**What's in it:**
+- **Coordinates:** `io.github.aarongreenhouse:promises:1.0-SNAPSHOT`, matching the package name.
+- **Java 26 and UTF-8**, the same as `livephotos`.
+- **All `javac` lint and Javadoc checks turned on**, so problems in the annotation types or test cases show up as warnings.
+- **No dependencies yet.** I left out JUnit because nothing uses it so far. The Java test cases may just be input files for the Rust analyzer rather than JUnit tests.
+
+**One more file:** I added a top-level [.gitignore](.gitignore) that ignores `java/target/`, so Maven's build output isn't committed. Your global ignore file only covers Claude's local settings.
+
+Java 26 means anyone using the jar needs Java 26 or later. If you want the annotation and test cases usable on older JDKs, Java 21 is the oldest version with every feature the rules mention, such as records and sealed classes. Nothing is committed yet.
+
+## 2026-11-23 15:20 EST
+
+### Prompt
+
+commit and push
+
+### Response
+
+I committed the annotation and build file as `35cf2df` and pushed the branch `1-create-the-immutable-annotation` to GitHub. The push also included `775829d`, the package-name commit you'd asked me to hold back earlier. The branch is now in sync with GitHub.
+
+The commit contains the `Immutable` annotation, [java/pom.xml](java/pom.xml), [.gitignore](.gitignore), and the prompt log entries since the last commit. Its message says "Refs #1", which links it to the issue without closing it. Issue #1 will close once this branch is merged into `main`, for example through a pull request that says "Closes #1".
