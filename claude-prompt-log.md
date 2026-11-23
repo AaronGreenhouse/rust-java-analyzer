@@ -234,3 +234,52 @@ tag the repository to indicate this is the baseline starting point for developin
 I tagged commit `61ef889` (the revised analysis description) as `baseline` and pushed the tag to GitHub. It's an annotated tag with the message "Baseline: analysis description complete, before implementation of the analysis begins."
 
 The prompt log entries added since that commit, including this exchange, aren't part of the tagged version. If you'd rather use a different name, such as `v0.0.0`, I can rename it. That means deleting the tag on GitHub and pushing the new one.
+
+## 2026-11-23 14:56 EST
+
+### Prompt
+
+<ide_opened_file>The user opened the file /Users/aaron/VSCode Examples/rust-java-analyzer/README.md in the IDE. This may or may not be related to the current task.</ide_opened_file>
+move the previously created tag to the current version
+
+### Response
+
+The `baseline` tag now points to `db7aa8d` ("Fixed missing word"), your latest commit. I moved it on GitHub as well, and checked that the tag there points to the same commit as your local `main`. It keeps the same message.
+
+The only change not in the tagged version is the new prompt log entries since your last commit.
+
+Moving a tag that's already on GitHub doesn't update anyone else's copy. If someone fetched the old `baseline`, they would need `git fetch --tags --force` to get the new one. That probably doesn't matter for a repo only you use.
+
+## 2026-11-23 15:13 EST
+
+### Prompt
+
+<ide_opened_file>The user opened the file /Users/aaron/VSCode Examples/rust-java-analyzer/CLAUDE.md in the IDE. This may or may not be related to the current task.</ide_opened_file>
+Please use the package prefix "io.github.aarongreenhouse" for all generated Java packages
+
+### Response
+
+I added the rule to [CLAUDE.md](CLAUDE.md#L6), so every future session will put Java packages under `io.github.aarongreenhouse`. I included `io.github.aarongreenhouse.immutable` as an example; that's only an illustration, not a package that exists. I haven't committed the change.
+
+[analyses/Immutable.md](analyses/Immutable.md) still doesn't name the `@Immutable` annotation's package. That matters because the analyzer recognizes the annotation by its fully qualified name. Do you want me to add the full name there, for example `io.github.aarongreenhouse.immutable.Immutable`?
+
+## 2026-11-23 15:15 EST
+
+### Prompt
+
+Lets use package io.github.aarongreenhouse.promises as the root package for analysis annotation types.  So update the existing files to use io.github.aarongreenhouse.promises.Immutable as the immutable marker type.
+
+### Response
+
+The immutable marker type is now `io.github.aarongreenhouse.promises.Immutable` in both files that mention it:
+
+- **[analyses/Immutable.md](analyses/Immutable.md#L28-L35):** the annotation section gives this as its fully qualified name. The sentence saying the analyzer matches the annotation by its full name now spells it out.
+- **[CLAUDE.md](CLAUDE.md#L6-L7):** analysis annotation types go in `io.github.aarongreenhouse.promises` or its subpackages, with `Immutable` as the example. This replaces the made-up `io.github.aarongreenhouse.immutable` example from my last change. The general `io.github.aarongreenhouse` prefix rule is still there.
+
+No other files mentioned a package, and the `java/` directory is still empty, so there's no Java code to change. Nothing is committed yet.
+
+## 2026-11-23 15:16 EST
+
+### Prompt
+
+commit, but do not push

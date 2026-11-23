@@ -27,11 +27,12 @@ The analysis is limited to the analyzed source: the set of Java source files giv
 
 The annotation is declared in the project's `java/` source tree:
 
+- Its fully qualified name is `io.github.aarongreenhouse.promises.Immutable`.
 - It is a declaration annotation with `@Target(ElementType.TYPE)`, so it can be placed on class, interface, enum, and record declarations.
 - It has `@Retention(RetentionPolicy.CLASS)` and is `@Documented`, so it appears in generated Javadoc.
 - It is deliberately not `@Inherited`. That meta-annotation only works through superclasses and has no effect through interfaces ([`java.lang.annotation.Inherited`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/annotation/Inherited.html)). It would also hide the explicit marking that the [subtype rules](#subtypes) require.
 
-The analyzer recognizes the annotation by its fully qualified name, not just its simple name, so an unrelated annotation also called `Immutable` is not mistaken for it.
+The analyzer recognizes the annotation by its fully qualified name, `io.github.aarongreenhouse.promises.Immutable`, not just its simple name, so an unrelated annotation also called `Immutable` is not mistaken for it.
 
 ### Marker
 
