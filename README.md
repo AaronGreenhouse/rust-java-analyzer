@@ -1,3 +1,9 @@
+<!-- markdownlint-disable MD033 MD041 -->
+<p align="center">
+  <img src="docs/logo/logo.svg" alt="The rust-java-analyzer logo: an @ sign shaped like a rust-colored gear and magnifying glass, with a coffee bean inside" width="160">
+</p>
+<!-- markdownlint-enable MD033 MD041 -->
+
 # rust-java-analyzer
 
 A static analyzer for Java source code, written in Rust.
@@ -15,6 +21,7 @@ The goal is to build, in Rust, an analyzer that checks Java source code against 
 | [`rust/`](rust/) | The analyzer, written in Rust. |
 | [`java/`](java/) | The Java side: the `@Immutable` annotation and the test cases for it. |
 | [`analyses/`](analyses/) | One description per analysis. These drive the implementation, including the annotation classes and the Java test files. |
+| [`docs/`](docs/) | Project documentation. [`docs/logo/`](docs/logo/README.md) has the logo and describes how it is designed. |
 | [`claude-prompt-log.md`](claude-prompt-log.md) | A log of every Claude Code prompt and response (see [Development with Claude](#development-with-claude)). |
 
 ## Analyses

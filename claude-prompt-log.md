@@ -500,3 +500,167 @@ The commit includes:
 - the prompt log
 
 The earlier [CLAUDE.md](CLAUDE.md) commit, c7dbdf7, was pushed along with it.
+
+## 2026-11-23 16:42 EST
+
+### Prompt
+
+Design a logo for this project.  Do not draw/render it yet.  Just give me a description of what the logo would look like.
+
+### Response
+
+Here's a logo concept built around the `@` sign, since the whole project centers on checking an annotation.
+
+**The mark**
+
+- **The ring:** a heavy, rounded `@` drawn as a single thick ring. Its tail doesn't trail off the way a normal `@` does. It sweeps out to the lower right and ends in a short, straight handle, which turns the `@` into a magnifying glass. That stands for the analyzer inspecting code.
+- **Inside the lens:** where the small "a" of the `@` would be, there's a coffee bean seen from above, tilted about 30°. That stands for Java.
+- **The keyhole:** the bean's center crease is replaced by a keyhole cut all the way through, so the background shows through it. That stands for `@Immutable`: the code under the lens is locked.
+
+**Color**
+
+- **Ring and handle:** rust orange, around `#B7410E`, with a slightly darker inner edge so it looks like forged, oxidized metal. That's the nod to Rust.
+- **Bean:** dark roast brown, around `#3B2416`, with one soft highlight on its upper curve.
+- **Keyhole:** transparent, so it works on light or dark backgrounds.
+
+**Wordmark (optional)**
+
+The project name sits to the right in a monospaced font, with the analysis name in rust orange, like this: `rust-java-analyzer` / `@Immutable`. This repeats the `@` motif and looks like source code.
+
+**Small sizes and other variants**
+
+- **Below about 32px:** drop the bean's highlight and enlarge the keyhole so it still reads. At 16px, the mark becomes just the orange `@`-magnifier with a solid brown dot inside.
+- **One color:** the ring is solid and the bean is a cutout with the keyhole left solid. This works for stamps, stickers, and favicons.
+
+**Things it avoids on purpose**
+
+It doesn't use Ferris the crab, the Rust gear logo, or the Java steaming-cup logo. The official logos are trademarked, and a coffee bean, a rust color, and a generic `@` say the same thing without borrowing anyone's brand.
+
+If you want to go ahead, I can draw it as an SVG.
+
+## 2026-11-23 16:44 EST
+
+### Prompt
+
+Create a documentatin folder in the repo and render the logo there
+
+### Response
+
+I created a [docs/](docs/) folder with the logo in five files:
+
+- [docs/logo.svg](docs/logo.svg): the mark on its own, as a vector you can scale.
+- [docs/logo-wordmark.svg](docs/logo-wordmark.svg): the mark with "rust-java-analyzer" and "@Immutable" beside it.
+- [docs/logo-512.png](docs/logo-512.png): the mark at 512px.
+- [docs/logo-32.png](docs/logo-32.png): the mark at icon size.
+- [docs/logo-wordmark.png](docs/logo-wordmark.png): the wordmark at 1600px wide.
+
+All the PNGs have transparent backgrounds. I checked each one after rendering it.
+
+It follows the design I described, with two small changes:
+
+- **The `@` shape:** the inner "a" is a short stem to the right of the bean, which makes the shape read as `@` more clearly.
+- **No inner shading on the ring:** I used a light-to-dark rust gradient instead of the darker inner edge.
+
+At 32px the bean and keyhole are still visible, so I didn't make a separate simplified icon yet.
+
+The wordmark SVG uses the viewer's monospace font, so its text will look slightly different from one machine to another. The PNG has it fixed in the font I rendered it with. If you want the SVG to look the same everywhere, I can convert the text to outlines.
+
+Nothing is committed. You're on branch `4-create-a-logo-for-the-project`, and the new files are in your working tree.
+
+## 2026-11-23 16:48 EST
+
+### Prompt
+
+The at-sign feature of the image could be clearer
+
+### Response
+
+The `@` now reads clearly. The inner "a" has its own round bowl and stem, just like the small "a" in a typed `@`, and the coffee bean sits inside the bowl. The outer ring still sweeps around and turns into the magnifying-glass handle.
+
+I updated [docs/logo.svg](docs/logo.svg) and [docs/logo-wordmark.svg](docs/logo-wordmark.svg), and re-exported all three PNGs from them. In the wordmark I also moved the text slightly right to make room for the wider mark.
+
+To fit the bowl, I made the bean about a quarter smaller. At 512px and in the wordmark, the keyhole is still easy to see. In [logo-32.png](docs/logo-32.png) the `@` is clear but the bean is just a dark dot. If you want this as a favicon, I could make a simplified small version that drops the bean and keeps only the `@` and handle.
+
+Nothing is committed yet.
+
+## 2026-11-23 17:15 EST
+
+### Prompt
+
+Actually, I don't like the keyhole in the coffee bean.  Any way to make the rust connection a little more obvious?
+
+Also, put all the logos in a logo subfolder of docs.  Also, in the logo folder create a file that describes the background information on the logo and how they are designed so that the logos can be recreated from it.  The root readme file should point to this file
+
+### Response
+
+I removed the keyhole and gave the logo gear teeth to make the Rust connection clearer. All the logo files are now in [docs/logo/](docs/logo/), along with a design document that explains how to redraw them.
+
+**Logo changes**
+- **Gear teeth:** 28 small teeth now run around the outer ring of the `@`, which makes the rust-orange ring read as a gear. It's a generic gear, not the official Rust logo, which is a trademarked gear with an "R" in the middle.
+- **Bean:** the keyhole is gone, and the bean has a normal S-shaped crease instead. Nothing in the mark itself stands for "immutable" any more. The "@Immutable" line in the wordmark carries that meaning now.
+- **Small size:** the gear and the `@` are still recognizable at 32px.
+
+**Files**
+- [docs/logo/](docs/logo/) holds both SVGs and all three PNGs, re-rendered with the new design.
+- [docs/logo/README.md](docs/logo/README.md) is the design document. It covers:
+  - what each part of the logo stands for, and why it avoids the official Rust and Java logos
+  - exact construction steps: the canvas, both center points, every path, the transform, and the stroke widths
+  - a short Python script that generates the gear-tooth path, which I checked produces the path in `logo.svg` exactly
+  - the colors and gradients, the wordmark's font and text positions, and the commands that render the PNGs
+- In the root [README.md](README.md), a new `docs/` row in the "Repository layout" table links to the design document.
+
+I didn't add the logo image to the top of the root README. If you'd like it there as a banner, I can add it.
+
+Nothing is committed. The changes are the new `docs/` folder, the README edit, and the prompt log.
+
+## 2026-11-23 17:23 EST
+
+### Prompt
+
+add the logo to the top of the README.  I also want a version I can use for the GitHub social preview banner.
+
+### Response
+
+I added the logo to the top of the README and made a banner for GitHub's social preview.
+
+- **README:** the logo now sits centered above the title in [README.md](README.md), at 160px wide.
+- **Banner:** [social-preview.png](docs/logo/social-preview.png) is 1280 × 640, the size GitHub recommends. It shows the logo on the left, with "rust-java-analyzer", "@Immutable", and the README's one-line description on the right. It has a solid pale-cream background, because sites that show previews may put the image on any color. The SVG it's made from, [social-preview.svg](docs/logo/social-preview.svg), is in the same folder.
+- **Design document:** [docs/logo/README.md](docs/logo/README.md) now lists both banner files and gives the banner's layout and the command that renders it. It also explains how to upload the banner.
+
+GitHub doesn't let you set the preview image from the repo, so you'll need to upload it yourself: go to the repository's **Settings** page, find **Social preview** under **General**, and upload `docs/logo/social-preview.png`.
+
+The markdown linter in VS Code now warns about the README, because the file starts with HTML instead of a heading. HTML is the only way to center and size an image on GitHub, so this is the usual approach and the warnings are safe to ignore. If you'd rather not see them, I can add a comment that turns the linter off for those lines.
+
+Nothing is committed.
+
+## 2026-11-23 17:26 EST
+
+### Prompt
+
+Please turn off the linter for those lines
+
+### Response
+
+I turned the linter off for those lines in [README.md](README.md). Comments before and after the centered logo switch off the two rules, inline HTML (MD033) and "first line should be a heading" (MD041). Every other rule still applies to those lines, and both rules are back on for the rest of the file. VS Code reported no new warnings after the edit.
+
+The logo's design document, [docs/logo/README.md](docs/logo/README.md), also uses HTML to show the logo images, so it may get the same inline-HTML warning. I can add the same comments there if you want.
+
+## 2026-11-23 17:27 EST
+
+### Prompt
+
+YEs do that
+
+### Response
+
+I turned the linter off for the HTML line in [docs/logo/README.md](docs/logo/README.md), the one that shows the logo images. The comment covers only that line, so the rest of the file is still checked.
+
+That edit exposed one more warning in the same file: the code block with the stem, ring, and handle path didn't say what language it was. I marked it as plain text, and VS Code now reports no warnings for the file.
+
+Nothing is committed.
+
+## 2026-11-23 17:28 EST
+
+### Prompt
+
+commit and push

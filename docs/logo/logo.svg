@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-labelledby="title">
+  <title id="title">rust-java-analyzer logo</title>
+  <!-- See README.md in this folder for how this logo is constructed. -->
+  <defs>
+    <linearGradient id="rust" gradientUnits="userSpaceOnUse" x1="16" y1="16" x2="236" y2="236">
+      <stop offset="0" stop-color="#C9521A"/>
+      <stop offset="1" stop-color="#963208"/>
+    </linearGradient>
+    <radialGradient id="roast" cx="0.4" cy="0.3" r="0.8">
+      <stop offset="0" stop-color="#5A3824"/>
+      <stop offset="1" stop-color="#2E1A0F"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Gear teeth on the outer ring of the @. -->
+  <path fill="url(#rust)" stroke="url(#rust)" stroke-width="2" stroke-linejoin="round"
+        d="M212.9 120.4 L224.8 122.9 L224.0 130.5 L211.9 130.5Z M166.1 199.0 L170.7 210.3 L164.0 213.9 L157.2 203.8Z M149.0 207.2 L151.3 219.1 L144.0 221.3 L139.3 210.2Z M130.5 211.9 L130.5 224.0 L122.9 224.8 L120.4 212.9Z M111.6 212.9 L109.1 224.8 L101.5 224.0 L101.5 211.9Z M92.7 210.2 L88.0 221.3 L80.7 219.1 L83.0 207.2Z M74.8 203.8 L68.0 213.9 L61.3 210.3 L65.9 199.0Z M58.5 194.1 L49.8 202.6 L44.0 197.8 L50.6 187.7Z M44.3 181.4 L34.2 188.0 L29.4 182.2 L37.9 173.5Z M33.0 166.1 L21.7 170.7 L18.1 164.0 L28.2 157.2Z M24.8 149.0 L12.9 151.3 L10.7 144.0 L21.8 139.3Z M20.1 130.5 L8.0 130.5 L7.2 122.9 L19.1 120.4Z M19.1 111.6 L7.2 109.1 L8.0 101.5 L20.1 101.5Z M21.8 92.7 L10.7 88.0 L12.9 80.7 L24.8 83.0Z M28.2 74.8 L18.1 68.0 L21.7 61.3 L33.0 65.9Z M37.9 58.5 L29.4 49.8 L34.2 44.0 L44.3 50.6Z M50.6 44.3 L44.0 34.2 L49.8 29.4 L58.5 37.9Z M65.9 33.0 L61.3 21.7 L68.0 18.1 L74.8 28.2Z M83.0 24.8 L80.7 12.9 L88.0 10.7 L92.7 21.8Z M101.5 20.1 L101.5 8.0 L109.1 7.2 L111.6 19.1Z M120.4 19.1 L122.9 7.2 L130.5 8.0 L130.5 20.1Z M139.3 21.8 L144.0 10.7 L151.3 12.9 L149.0 24.8Z M157.2 28.2 L164.0 18.1 L170.7 21.7 L166.1 33.0Z M173.5 37.9 L182.2 29.4 L188.0 34.2 L181.4 44.3Z M187.7 50.6 L197.8 44.0 L202.6 49.8 L194.1 58.5Z M199.0 65.9 L210.3 61.3 L213.9 68.0 L203.8 74.8Z M207.2 83.0 L219.1 80.7 L221.3 88.0 L210.2 92.7Z M211.9 101.5 L224.0 101.5 L224.8 109.1 L212.9 111.6Z"/>
+
+  <!-- The bowl of the inner "a". -->
+  <circle cx="106" cy="118" r="40" fill="none" stroke="url(#rust)" stroke-width="18"/>
+
+  <!-- The @: the stem of the inner "a", then the outer ring, then the magnifier handle. -->
+  <path d="M 146 80
+           L 146 134
+           C 146 160 178 166 200 147
+           A 90 90 0 1 0 174 185
+           L 226 228"
+        fill="none" stroke="url(#rust)" stroke-width="20"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- The coffee bean, with its crease. -->
+  <g transform="translate(106 118) rotate(-30) scale(0.85)">
+    <ellipse cx="0" cy="0" rx="25" ry="34" fill="url(#roast)"/>
+    <path d="M 1 -29 C -11 -12 11 12 -1 29" fill="none" stroke="#1A0D06"
+          stroke-width="4.5" stroke-linecap="round"/>
+    <path d="M -17 -20 Q -10 -30 2 -32" fill="none" stroke="#8A5A3C"
+          stroke-width="3.5" stroke-linecap="round" opacity="0.8"/>
+  </g>
+</svg>
