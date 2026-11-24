@@ -37,8 +37,10 @@ record Dot(int x, int y)
 
 @Immutable
 final class Square
-        // IMM-SUBINTERFACE satisfied: the class implements immutable Polygon, and through
-        // it immutable Shape, and is immutable
+        // IMM-SUBINTERFACE satisfied: the implementing class of immutable Polygon is
+        // immutable
+        // IMM-SUBINTERFACE satisfied: the class implements immutable Shape through
+        // Polygon, and is immutable
         implements Polygon {}
 
 @Immutable

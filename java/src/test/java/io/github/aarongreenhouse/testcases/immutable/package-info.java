@@ -12,6 +12,7 @@
  *   <li>{@code fieldtypes}: IMM-FIELD-TYPE
  *   <li>{@code nested}: IMM-INNER
  *   <li>{@code anonymous}: IMM-ANONYMOUS, IMM-LAMBDA
+ *   <li>{@code annotations}: IMM-ANNOTATION
  * </ul>
  *
  * <p>A line comment states the expected result of each test. It is placed directly
@@ -38,8 +39,12 @@
  *
  * <ul>
  *   <li>IMM-SUBCLASS and IMM-SUBINTERFACE cover indirect subtypes as well as direct ones.
- *       An unmarked indirect subtype is reported even when a type between it and the
- *       immutable type is also reported.
+ *       A subtype gets one result for each immutable type it is a subtype of, placed on
+ *       the {@code extends} or {@code implements} clause through which that type is
+ *       reached. An unmarked indirect subtype is reported even when a type between it
+ *       and the immutable type is also reported.
+ *   <li>A positive result is expected only where the analysis description defines a
+ *       case for it. IMM-ANONYMOUS and IMM-ANNOTATION have no positive results.
  *   <li>An anonymous class, including an enum constant with a class body, is reported
  *       only under IMM-ANONYMOUS, not also under IMM-SUBCLASS or IMM-SUBINTERFACE.
  *   <li>A marked inner class that extends an immutable class satisfies IMM-SUBCLASS, and

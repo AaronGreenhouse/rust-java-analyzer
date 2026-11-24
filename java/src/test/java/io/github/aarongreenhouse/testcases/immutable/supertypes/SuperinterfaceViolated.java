@@ -10,11 +10,14 @@ interface MutableParent {
 
 interface MutableGenericParent<T> {}
 
+// IMM-SUPERINTERFACE satisfied: the interface has no superinterfaces
 @Immutable
 interface ImmutableSibling {}
 
-// IMM-SUBINTERFACE violated: the subinterface of immutable ImmutableSibling is not marked
-interface UnmarkedChild extends ImmutableSibling {}
+interface UnmarkedChild
+        // IMM-SUBINTERFACE violated: the subinterface of immutable ImmutableSibling is
+        // not marked
+        extends ImmutableSibling {}
 
 @Immutable
 interface ExtendsMutableInterface

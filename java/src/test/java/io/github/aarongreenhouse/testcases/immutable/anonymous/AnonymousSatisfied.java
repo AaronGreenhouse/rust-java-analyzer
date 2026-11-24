@@ -39,9 +39,9 @@ class Scheduler {
 
 @Immutable
 enum Coin {
-    // IMM-ANONYMOUS satisfied: the enum constant has no class body
+    // IMM-ANONYMOUS not applicable: the enum constant has no class body
     PENNY,
-    // IMM-ANONYMOUS satisfied: the enum constant has arguments but no class body
+    // IMM-ANONYMOUS not applicable: the enum constant has arguments but no class body
     NICKEL(5);
 
     final int cents;

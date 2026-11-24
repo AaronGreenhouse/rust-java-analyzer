@@ -29,7 +29,7 @@ enum Operation {
 
 @Immutable
 enum Priority {
-    // IMM-ANONYMOUS satisfied: the enum constant has no class body
+    // IMM-ANONYMOUS not applicable: the enum constant has no class body
     LOW(1),
     // IMM-ANONYMOUS violated: the enum constant has an empty class body, which still
     // declares an anonymous class extending the immutable enum Priority

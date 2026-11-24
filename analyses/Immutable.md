@@ -14,11 +14,13 @@ This analysis is verified solely by looking at how types and fields are declared
 
 The analysis is not purely syntactic in the strict sense. Checking a field's type or a class's supertypes requires resolving names (through imports, packages, and nested types) to their declarations, and knowing the type hierarchy. The implementation therefore needs a symbol table on top of the parser's AST.
 
-In the rules, "type" means a class, interface, enum, or record declaration. Enums and records are classes (JLS §8.9, §8.10), so every rule for classes applies to them too.
+In the rules, "type" means a class, interface, enum, or record declaration. Enums and records are classes (JLS §8.9, §8.10), so every rule for classes applies to them too. Annotation interfaces are not types in this sense; they are covered only by [IMM-ANNOTATION](#annotation-interfaces).
 
 ### Scope
 
 The analysis is limited to the analyzed source: the set of Java source files given to the analyzer.
+
+The analyzed source is assumed to compile. So the analyzer has, at minimum, the class files of the Java standard library, along with any other libraries the source needs, and it may read them to resolve names and to find the members and supertypes of library types. For example, IMM-LAMBDA must count the abstract methods that an interface inherits from a library interface such as `java.lang.Runnable`. Being able to read a library type does not make it part of the analyzed source.
 
 - Rules that say "all subclasses" or "all implementing classes" mean those declared in the analyzed source. A subclass compiled separately, for example in another library, is not seen.
 - A type whose declaration is not in the analyzed source is treated as not immutable. The exceptions are `java.lang.Object`, `java.lang.Enum`, and `java.lang.Record`, which are allowed as superclasses (see [Supertypes](#supertypes)). Library types that are known to be immutable, such as `String`, are a planned addition (see [Future work](#future-work)).
@@ -28,7 +30,7 @@ The analysis is limited to the analyzed source: the set of Java source files giv
 The annotation is declared in the project's `java/` source tree:
 
 - Its fully qualified name is `io.github.aarongreenhouse.promises.Immutable`.
-- It is a declaration annotation with `@Target(ElementType.TYPE)`, so it can be placed on class, interface, enum, and record declarations.
+- It is a declaration annotation with `@Target(ElementType.TYPE)`, so it can be placed on class, interface, enum, and record declarations. `ElementType.TYPE` also allows annotation interfaces, and no `ElementType` value excludes them, so the analyzer reports that case instead (see [Annotation interfaces](#annotation-interfaces)).
 - It has `@Retention(RetentionPolicy.CLASS)` and is `@Documented`, so it appears in generated Javadoc.
 - It is deliberately not `@Inherited`. That meta-annotation only works through superclasses and has no effect through interfaces ([`java.lang.annotation.Inherited`](https://docs.oracle.com/en/java/javase/21/docs/api/java.base/java/lang/annotation/Inherited.html)). It would also hide the explicit marking that the [subtype rules](#subtypes) require.
 
@@ -56,7 +58,7 @@ class Point { int x; }                        // not immutable
 }
 ```
 
-Rule IMM-SUPERINTERFACE: If an interface is immutable, each of its direct superinterfaces must be immutable. It is an error if one is not. Without this rule, a constant inherited from an unmarked superinterface, such as `int[] TABLE = {1, 2};`, would never have its type checked.
+Rule IMM-SUPERINTERFACE: If an interface is immutable, each of its direct superinterfaces must be immutable. It is an error if one is not. An immutable interface with no superinterfaces satisfies the rule. Without this rule, a constant inherited from an unmarked superinterface, such as `int[] TABLE = {1, 2};`, would never have its type checked.
 
 A class that is immutable does not need its superinterfaces to be immutable. Interfaces have no instance state, and the class's own fields are checked by the field rules below. Interface constants inherited by the class are a [limitation](#limitations).
 
@@ -78,17 +80,25 @@ class Savings extends Account {}        // error: subclass of Account is not mar
 class HighYield extends Savings {}      // error: indirect subclass of Account is not marked
 ```
 
+A subtype receives one result for each immutable type it is a subtype of, direct or indirect. A subtype that is not itself immutable is not counted, because these rules do not apply to it. For example, with `@Immutable class Vehicle {}`, `@Immutable class Car extends Vehicle {}`, and `@Immutable final class SportsCar extends Car {}`, `SportsCar` receives two IMM-SUBCLASS results: one for `Car` and one for `Vehicle`. In the `Account` example above, `HighYield` receives one error, for `Account`; `Savings` is not immutable, so it contributes none.
+
+Each result is reported on the subtype's `extends` or `implements` clause that names the supertype through which the immutable type is reached: the immutable type itself, for a direct subtype, or the supertype between them, for an indirect one. In the example, both results for `SportsCar` are on `extends Car`. If the immutable type is reached through more than one clause, the result is reported on the first such clause in the source.
+
 Anonymous classes, including enum constants with a class body, are not reported under these rules. They are covered by IMM-ANONYMOUS instead (see [Anonymous classes, lambdas, and method references](#anonymous-classes-lambdas-and-method-references)).
 
 A class that can have no subclasses trivially satisfies IMM-SUBCLASS and is positively marked as such. These are:
 
 - a class declared `final`
 - a record, which is implicitly final (JLS §8.10)
-- an enum none of whose constants has a class body, which is implicitly final (JLS §8.9)
+- an enum. No class declaration can extend an enum (JLS §8.9). An enum none of whose constants has a class body is implicitly final. An enum with constant bodies is not final, but its only subclasses are those bodies, which are anonymous classes and are reported under IMM-ANONYMOUS.
+
+A class that is not final and has no subclasses in the analyzed source receives no IMM-SUBCLASS result. A positive result would be misleading, because a subclass declared outside the analyzed source could still break the rule (see [Limitations](#limitations)).
 
 ### Fields must be final
 
 These rules apply to all declared fields, both `static` and instance fields.
+
+Fields declared in the class body of an enum constant are checked as if they were declared in the enum itself. They are subject to IMM-FINAL-CLASS and IMM-FIELD-TYPE when the enum is immutable. This is in addition to the IMM-ANONYMOUS error for the class body.
 
 A field may be final because it is declared with the `final` modifier, or because the Java Language Specification makes it implicitly final. The analysis must treat implicitly final fields as final, rather than looking only for the `final` keyword. The implicitly final fields are:
 
@@ -106,7 +116,7 @@ Rule IMM-FINAL-CLASS: If a class is immutable, then all its declared fields must
 }
 ```
 
-Fields that are final should be positively marked as satisfying the requirement, stating whether they are declared or implicitly final.
+Fields that are final should be positively marked as satisfying the requirement, stating whether they are declared or implicitly final. A field that is both, such as an interface field written with the `final` modifier, is reported as declared final.
 
 ### Field types must be immutable
 
@@ -147,6 +157,8 @@ Nested enums, records, and interfaces are implicitly `static` (JLS §8.9, §8.10
 
 A `static` nested class declared inside an immutable type is not part of that type's state, so it does not need to be immutable itself.
 
+An immutable nested type that is explicitly or implicitly `static` satisfies IMM-INNER, and receives a positive result stating which case applies. A top-level type receives no IMM-INNER result, because the question does not arise.
+
 Since an inner class cannot be immutable, an inner class that extends an immutable class or implements an immutable interface is always an error. If it is not marked, the error is under IMM-SUBCLASS or IMM-SUBINTERFACE. If it is marked, it satisfies those rules, and the error is under IMM-INNER.
 
 ### Anonymous classes, lambdas, and method references
@@ -161,6 +173,8 @@ Source s = () -> state[0]++;   // error: lambda of immutable type Source
 ```
 
 Rule IMM-ANONYMOUS: It is an error for an anonymous class to extend an immutable class or implement an immutable interface.
+
+IMM-ANONYMOUS reports only errors. It has no positive results: code that declares no anonymous class, such as an enum constant without a class body, receives no IMM-ANONYMOUS result.
 
 Checking only the class or interface named in the class instance creation expression is enough. If that type is a subtype of an immutable type, then it must itself be immutable by IMM-SUBCLASS or IMM-SUBINTERFACE, so the anonymous class is still caught.
 
@@ -185,12 +199,22 @@ Implementation note: IMM-LAMBDA should be implemented by checking declarations i
 
 This is simpler because the target type of a particular lambda or method reference comes from its context, and finding it in general requires overload resolution and type inference. The cost is that it is stricter than needed: an immutable functional interface is reported even if no lambda or method reference ever targets it. Checking each lambda and method reference precisely is listed under [Future work](#future-work).
 
+### Annotation interfaces
+
+Rule IMM-ANNOTATION: It is an error for an annotation interface (JLS §9.6) to be annotated `@Immutable`.
+
+Marking an annotation interface immutable makes no sense. The analysis is about the state of objects that the program creates from a type's declaration. Instances of an annotation interface are created by the Java platform, not by the program, and its elements are not fields. So the annotation cannot be checked there, and is almost certainly a mistake.
+
+No other rules are checked for an annotation interface, whether or not it is marked, and it is never considered immutable. IMM-ANNOTATION reports only errors; an unmarked annotation interface receives no result.
+
 ### Results
 
 The analysis reports two kinds of result:
 
 - an **error**, when a rule is violated
 - a **positive result**, when a rule is satisfied, stating which case applies where a rule has more than one
+
+A positive result is reported only where the rule defines a case that is satisfied, including the trivial cases that the rules name. It is not reported merely because nothing is wrong.
 
 Each result gives the source location (file, line, and column), the rule identifier (such as `IMM-FIELD-TYPE`), and a message.
 

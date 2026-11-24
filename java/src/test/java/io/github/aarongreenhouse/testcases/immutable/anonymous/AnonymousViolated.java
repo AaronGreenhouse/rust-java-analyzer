@@ -29,8 +29,9 @@ class Seat {
 @Immutable
 class Crate<T> {}
 
-// IMM-SUBCLASS violated: the subclass of immutable Stamp is not marked
-class PostageStamp extends Stamp {}
+class PostageStamp
+        // IMM-SUBCLASS violated: the subclass of immutable Stamp is not marked
+        extends Stamp {}
 
 class Venue {
     // IMM-ANONYMOUS violated: the anonymous class implements the immutable interface

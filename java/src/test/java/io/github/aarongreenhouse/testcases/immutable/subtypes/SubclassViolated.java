@@ -23,13 +23,15 @@ class CheckingAccount
         extends Account {}
 
 class BusinessChecking
-        // IMM-SUBCLASS violated: the subclass of immutable CheckingAccount, and through
-        // it of immutable Account, is not marked
+        // IMM-SUBCLASS violated: the subclass of immutable CheckingAccount is not marked
+        // IMM-SUBCLASS violated: the indirect subclass of immutable Account, through
+        // CheckingAccount, is not marked
         extends CheckingAccount {}
 
 class HighYieldSavings
         // IMM-SUBCLASS violated: the indirect subclass of immutable Account, through
-        // SavingsAccount, is not marked. SavingsAccount is reported too.
+        // SavingsAccount, is not marked. SavingsAccount is reported too. It is not
+        // immutable, so it does not count as an immutable superclass of this class.
         extends SavingsAccount {}
 
 class Bond
