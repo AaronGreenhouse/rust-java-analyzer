@@ -16,6 +16,16 @@ record FinalRecord(int value) {}
 @Immutable
 enum FinalEnum { ONE, TWO }
 
+// IMM-SUBCLASS satisfied: no class declaration can extend an enum (JLS §8.9). Its only
+// subclasses are its constant bodies, which are reported under IMM-ANONYMOUS.
+@Immutable
+enum EnumWithBody {
+    // IMM-ANONYMOUS violated: the enum constant has a class body, which is an anonymous
+    // class extending the immutable enum EnumWithBody
+    ONE {},
+    TWO
+}
+
 @Immutable
 class Vehicle {}
 
@@ -24,15 +34,18 @@ class Car
         // IMM-SUBCLASS satisfied: the subclass of immutable Vehicle is immutable
         extends Vehicle {}
 
+// IMM-SUBCLASS satisfied: the class is declared final, so it has no subclasses
 @Immutable
 final class SportsCar
-        // IMM-SUBCLASS satisfied: the subclass of immutable Car, and through it of
-        // immutable Vehicle, is immutable
+        // IMM-SUBCLASS satisfied: the subclass of immutable Car is immutable
+        // IMM-SUBCLASS satisfied: the indirect subclass of immutable Vehicle, through
+        // Car, is immutable
         extends Car {}
 
 @Immutable
 abstract class Engine {}
 
+// IMM-SUBCLASS satisfied: the class is declared final, so it has no subclasses
 @Immutable
 final class Diesel
         // IMM-SUBCLASS satisfied: the subclass of immutable abstract class Engine is
@@ -40,6 +53,7 @@ final class Diesel
         extends Engine {}
 
 class Garage {
+    // IMM-SUBCLASS satisfied: the class is declared final, so it has no subclasses
     @Immutable
     static final class Truck
             // IMM-SUBCLASS satisfied: the static nested subclass of immutable Vehicle is
@@ -50,6 +64,7 @@ class Garage {
 @Immutable
 sealed class Tree permits TreeLeaf, TreeNode {}
 
+// IMM-SUBCLASS satisfied: the class is declared final, so it has no subclasses
 @Immutable
 final class TreeLeaf
         // IMM-SUBCLASS satisfied: the permitted subclass of immutable Tree is immutable
@@ -68,6 +83,7 @@ class Apple {
     int weight;
 }
 
+// IMM-SUBCLASS satisfied: the class is declared final, so it has no subclasses
 @Immutable
 final class AppleCrate
         // IMM-SUBCLASS satisfied: the subclass of the immutable generic class Crate is

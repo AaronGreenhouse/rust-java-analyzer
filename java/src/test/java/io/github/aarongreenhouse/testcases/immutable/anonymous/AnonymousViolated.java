@@ -7,7 +7,6 @@ interface Badge {}
 
 @Immutable
 interface VipBadge
-        // IMM-SUBINTERFACE satisfied: the subinterface of immutable Badge is immutable
         extends Badge {}
 
 @Immutable
@@ -30,8 +29,13 @@ class Seat {
 @Immutable
 class Crate<T> {}
 
-// IMM-SUBCLASS violated: the subclass of immutable Stamp is not marked
-class PostageStamp extends Stamp {}
+class PostageStamp
+        // IMM-SUBCLASS violated: the subclass of immutable Stamp is not marked
+        extends Stamp {}
+
+interface Lanyard
+        // IMM-SUBINTERFACE violated: the subinterface of immutable Badge is not marked
+        extends Badge {}
 
 class Venue {
     // IMM-ANONYMOUS violated: the anonymous class implements the immutable interface
@@ -75,32 +79,32 @@ class Venue {
     // error is reported at PostageStamp by IMM-SUBCLASS.
     final PostageStamp postage = new PostageStamp() {};
 
+    // IMM-ANONYMOUS not applicable: the interface named here, Lanyard, is not immutable.
+    // The anonymous class still implements immutable Badge, but the error is reported
+    // at Lanyard by IMM-SUBINTERFACE.
+    final Lanyard lanyard = new Lanyard() {};
+
     static {
         // IMM-ANONYMOUS violated: the anonymous class, in a static initializer,
         // implements the immutable interface Badge
         Badge badge = new Badge() {};
-        badge.hashCode();
     }
 
     void open() {
         // IMM-ANONYMOUS violated: the anonymous class, in a method body, implements the
         // immutable interface Badge
         Badge local = new Badge() {};
-        local.hashCode();
 
         Runnable action = () -> {
             // IMM-ANONYMOUS violated: the anonymous class, in a lambda body, implements
             // the immutable interface Badge
             Badge inLambda = new Badge() {};
-            inLambda.hashCode();
         };
-        action.run();
 
         Object outer = new Object() {
             // IMM-ANONYMOUS violated: the anonymous class, in the body of another
             // anonymous class, implements the immutable interface Badge
             final Badge inner = new Badge() {};
         };
-        outer.hashCode();
     }
 }

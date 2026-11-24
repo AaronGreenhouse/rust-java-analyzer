@@ -37,15 +37,16 @@ record Dot(int x, int y)
 
 @Immutable
 final class Square
-        // IMM-SUBINTERFACE satisfied: the class implements immutable Polygon, and through
-        // it immutable Shape, and is immutable
+        // IMM-SUBINTERFACE satisfied: the implementing class of immutable Polygon is
+        // immutable
+        // IMM-SUBINTERFACE satisfied: the class implements immutable Shape through
+        // Polygon, and is immutable
         implements Polygon {}
 
 @Immutable
 final class Ring
         // IMM-SUBINTERFACE satisfied: the class implements immutable Shape through its
         // superclass Circle, and is immutable
-        // IMM-SUBCLASS satisfied: the subclass of immutable Circle is immutable
         extends Circle {}
 
 class ShapeHolder {
@@ -53,6 +54,13 @@ class ShapeHolder {
     static class Star
             // IMM-SUBINTERFACE satisfied: the static nested implementing class of
             // immutable Shape is immutable
+            implements Shape {}
+
+    // IMM-INNER violated: an inner class is marked immutable
+    @Immutable
+    class Sticker
+            // IMM-SUBINTERFACE satisfied: the inner implementing class of immutable Shape
+            // is marked. The error for it is reported by IMM-INNER.
             implements Shape {}
 
     void draw() {

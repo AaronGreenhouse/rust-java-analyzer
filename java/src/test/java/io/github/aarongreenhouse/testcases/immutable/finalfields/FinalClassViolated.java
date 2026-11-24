@@ -29,10 +29,6 @@ class Counter {
             // IMM-FINAL-CLASS violated: the second of two declarators; the field is not
             // final
             high;
-
-    int hidden() {
-        return hidden;
-    }
 }
 
 @Immutable

@@ -23,13 +23,15 @@ class CheckingAccount
         extends Account {}
 
 class BusinessChecking
-        // IMM-SUBCLASS violated: the subclass of immutable CheckingAccount, and through
-        // it of immutable Account, is not marked
+        // IMM-SUBCLASS violated: the subclass of immutable CheckingAccount is not marked
+        // IMM-SUBCLASS violated: the indirect subclass of immutable Account, through
+        // CheckingAccount, is not marked
         extends CheckingAccount {}
 
 class HighYieldSavings
         // IMM-SUBCLASS violated: the indirect subclass of immutable Account, through
-        // SavingsAccount, is not marked. SavingsAccount is reported too.
+        // SavingsAccount, is not marked. SavingsAccount is reported too. It is not
+        // immutable, so it does not count as an immutable superclass of this class.
         extends SavingsAccount {}
 
 class Bond
@@ -45,7 +47,7 @@ class Bank {
 
     class Teller
             // IMM-SUBCLASS violated: the inner subclass of immutable Account is not
-            // marked
+            // marked. Marking it is not possible because of IMM-INNER.
             extends Account {}
 
     // IMM-INNER violated: an inner class is marked immutable
@@ -60,12 +62,20 @@ class Bank {
                 // IMM-SUBCLASS violated: the local subclass of immutable Account is not
                 // marked. Marking it is not possible because of IMM-INNER.
                 extends Account {}
+
+        // IMM-INNER violated: a local class is an inner class
+        @Immutable
+        class Receipt
+                // IMM-SUBCLASS satisfied: the local subclass of immutable Account is
+                // marked. The error for it is reported by IMM-INNER.
+                extends Account {}
     }
 }
 
 @Immutable
 sealed class Payment permits Cash, Card {}
 
+// IMM-SUBCLASS satisfied: the class is declared final, so it has no subclasses
 @Immutable
 final class Cash
         // IMM-SUBCLASS satisfied: the permitted subclass of immutable Payment is

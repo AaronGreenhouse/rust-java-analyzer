@@ -32,6 +32,12 @@ class Loose {
     int count;
 }
 
+@Immutable
+class Flawed {
+    // IMM-FIELD-TYPE violated: an array type is never immutable
+    final int[] data = {};
+}
+
 class Cabinet {
     @Immutable
     static class Shelf {}
@@ -72,6 +78,18 @@ class Wallet {
     // IMM-FIELD-TYPE satisfied: Box is an immutable generic class, with a bounded
     // wildcard type argument
     final Box<? extends Loose> boundedBox = null;
+
+    // IMM-FIELD-TYPE satisfied: Box is an immutable generic class, used as a raw type
+    @SuppressWarnings("rawtypes")
+    final Box rawBox = null;
+
+    // IMM-FIELD-TYPE satisfied: Box is an immutable generic class; its type argument
+    // does not matter, even though it is an array type
+    final Box<int[]> arrayBox = null;
+
+    // IMM-FIELD-TYPE satisfied: Flawed is declared immutable. It counts as immutable
+    // even though it has errors of its own.
+    final Flawed flawed = null;
 
     // IMM-FIELD-TYPE satisfied: Money is an immutable class, in a static field
     static final Money ZERO = null;

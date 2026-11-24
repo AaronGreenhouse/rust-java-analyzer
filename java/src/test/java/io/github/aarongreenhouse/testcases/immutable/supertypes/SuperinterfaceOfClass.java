@@ -6,9 +6,9 @@ interface MutableConstants {
     int[] SHARED = {1, 2};
 }
 
-// IMM-SUPERINTERFACE applies only to interfaces. An immutable class, enum, or record may
-// implement an interface that is not immutable. The constant SHARED that these types
-// inherit is not checked, which is a known limitation of the analysis.
+// NOTE: IMM-SUPERINTERFACE applies only to interfaces. An immutable class, enum, or
+// record may implement an interface that is not immutable. The constant SHARED that
+// these types inherit is not checked, which is a known limitation of the analysis.
 
 @Immutable
 class ClassImplementsMutable

@@ -21,8 +21,9 @@ class Drawers {
 @Immutable
 class Pen {}
 
-// IMM-SUBCLASS violated: the subclass of immutable Pen is not marked
-class FancyPen extends Pen {}
+class FancyPen
+        // IMM-SUBCLASS violated: the subclass of immutable Pen is not marked
+        extends Pen {}
 
 @Immutable
 class Desk {

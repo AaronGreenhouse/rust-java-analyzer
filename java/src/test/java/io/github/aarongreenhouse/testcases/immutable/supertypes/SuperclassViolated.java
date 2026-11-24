@@ -16,11 +16,13 @@ class MutableGenericBase<T> {
     T value;
 }
 
+// IMM-SUPERCLASS satisfied: the superclass is implicitly java.lang.Object
 @Immutable
 class ImmutableRoot {}
 
-// IMM-SUBCLASS violated: the subclass of immutable ImmutableRoot is not marked
-class UnmarkedMiddle extends ImmutableRoot {}
+class UnmarkedMiddle
+        // IMM-SUBCLASS violated: the subclass of immutable ImmutableRoot is not marked
+        extends ImmutableRoot {}
 
 @Immutable
 class ExtendsMutable

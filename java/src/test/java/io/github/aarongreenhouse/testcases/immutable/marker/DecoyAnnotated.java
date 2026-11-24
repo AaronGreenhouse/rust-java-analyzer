@@ -27,7 +27,8 @@ class DecoyByQualifiedName {
 class RealByQualifiedName {}
 
 // IMM-MARK not immutable: annotated with the decoy annotation
-// IMM-SUBCLASS violated: the subclass of immutable RealByQualifiedName is marked only
-// with the decoy annotation
 @Immutable
-class DecoySubclass extends RealByQualifiedName {}
+class DecoySubclass
+        // IMM-SUBCLASS violated: the subclass of immutable RealByQualifiedName is marked
+        // only with the decoy annotation
+        extends RealByQualifiedName {}

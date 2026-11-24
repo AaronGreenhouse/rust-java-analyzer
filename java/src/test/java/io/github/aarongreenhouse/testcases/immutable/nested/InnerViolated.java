@@ -7,9 +7,9 @@ class Store {
     @Immutable
     class Clerk {}
 
-    // IMM-INNER violated: a local class in a field initializer's lambda body is an inner
-    // class
     final Runnable task = () -> {
+        // IMM-INNER violated: a local class in a field initializer's lambda body is an
+        // inner class
         @Immutable
         class Step {}
     };

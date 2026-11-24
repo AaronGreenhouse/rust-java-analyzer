@@ -1,2 +1,5 @@
 # Maven build output
 java/target/
+
+# Scratch output, such as review results
+temp-results/

@@ -17,8 +17,9 @@ class MarkedBase {}
 
 // IMM-MARK not immutable: @Immutable is not @Inherited, so it is not inherited from
 // MarkedBase
-// IMM-SUBCLASS violated: the subclass of immutable MarkedBase is not marked
-class UnmarkedSubclass extends MarkedBase {
+class UnmarkedSubclass
+        // IMM-SUBCLASS violated: the subclass of immutable MarkedBase is not marked
+        extends MarkedBase {
     // IMM-FINAL-CLASS not applicable: UnmarkedSubclass is not immutable
     int count;
 }

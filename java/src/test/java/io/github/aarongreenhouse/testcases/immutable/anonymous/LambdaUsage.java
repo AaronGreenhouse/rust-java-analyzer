@@ -2,9 +2,9 @@ package io.github.aarongreenhouse.testcases.immutable.anonymous;
 
 import io.github.aarongreenhouse.promises.Immutable;
 
-// IMM-LAMBDA is checked at the declaration of each immutable interface, not at each
-// lambda or method reference. So the lambdas and method references here get no result.
-// The error for them is reported at the declaration of Generator.
+// NOTE: IMM-LAMBDA is checked at the declaration of each immutable interface, not at
+// each lambda or method reference. So the lambdas and method references here get no
+// result. The error for them is reported at the declaration of Generator.
 
 // IMM-LAMBDA violated: the interface has exactly one abstract method
 @Immutable
@@ -34,6 +34,5 @@ class Pipeline {
         // IMM-LAMBDA not applicable: the lambda targets immutable Generator and captures
         // mutable state, but the error is reported at the declaration of Generator
         Generator counter = () -> state[0]++;
-        counter.next();
     }
 }

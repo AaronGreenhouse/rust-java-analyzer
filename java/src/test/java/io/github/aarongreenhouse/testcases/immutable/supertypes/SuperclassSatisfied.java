@@ -2,12 +2,15 @@ package io.github.aarongreenhouse.testcases.immutable.supertypes;
 
 import io.github.aarongreenhouse.promises.Immutable;
 
+// IMM-SUPERCLASS satisfied: the superclass is implicitly java.lang.Object
 @Immutable
 class ImmutableBase {}
 
+// IMM-SUPERCLASS satisfied: the superclass is implicitly java.lang.Object
 @Immutable
 abstract class ImmutableAbstractBase {}
 
+// IMM-SUPERCLASS satisfied: the superclass is implicitly java.lang.Object
 @Immutable
 class ImmutableGenericBase<T> {}
 
@@ -15,7 +18,23 @@ class MutableTypeArgument {
     int count;
 }
 
+class MutableAncestor {
+    int count;
+}
+
+@Immutable
+class FlawedBase
+        // IMM-SUPERCLASS violated: the superclass MutableAncestor is not immutable
+        extends MutableAncestor {}
+
+@Immutable
+class ExtendsFlawedBase
+        // IMM-SUPERCLASS satisfied: the superclass FlawedBase is declared immutable. It
+        // counts as immutable even though it has errors of its own.
+        extends FlawedBase {}
+
 class SuperclassHolder {
+    // IMM-SUPERCLASS satisfied: the superclass is implicitly java.lang.Object
     @Immutable
     static class ImmutableNestedBase {}
 }

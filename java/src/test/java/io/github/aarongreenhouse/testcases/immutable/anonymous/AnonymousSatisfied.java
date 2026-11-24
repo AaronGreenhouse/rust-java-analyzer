@@ -33,24 +33,5 @@ class Scheduler {
         // IMM-ANONYMOUS not applicable: the class Task is not immutable. An anonymous
         // class may appear in the body of an immutable class.
         Task task = new Task() {};
-        task.run();
-    }
-}
-
-@Immutable
-enum Coin {
-    // IMM-ANONYMOUS satisfied: the enum constant has no class body
-    PENNY,
-    // IMM-ANONYMOUS satisfied: the enum constant has arguments but no class body
-    NICKEL(5);
-
-    final int cents;
-
-    Coin() {
-        this(1);
-    }
-
-    Coin(int cents) {
-        this.cents = cents;
     }
 }
