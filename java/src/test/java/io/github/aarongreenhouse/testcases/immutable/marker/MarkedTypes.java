@@ -29,6 +29,7 @@ class MarkedByQualifiedName {}
 // IMM-MARK immutable: the annotation comes after another modifier
 final @Immutable class MarkedAfterModifier {}
 
+// IMM-MARK not immutable: the class has no annotation
 class MarkedContainer {
     // IMM-MARK immutable: static nested class annotated through a single-type import
     @Immutable

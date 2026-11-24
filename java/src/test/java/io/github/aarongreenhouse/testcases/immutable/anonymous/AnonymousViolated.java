@@ -88,28 +88,23 @@ class Venue {
         // IMM-ANONYMOUS violated: the anonymous class, in a static initializer,
         // implements the immutable interface Badge
         Badge badge = new Badge() {};
-        badge.hashCode();
     }
 
     void open() {
         // IMM-ANONYMOUS violated: the anonymous class, in a method body, implements the
         // immutable interface Badge
         Badge local = new Badge() {};
-        local.hashCode();
 
         Runnable action = () -> {
             // IMM-ANONYMOUS violated: the anonymous class, in a lambda body, implements
             // the immutable interface Badge
             Badge inLambda = new Badge() {};
-            inLambda.hashCode();
         };
-        action.run();
 
         Object outer = new Object() {
             // IMM-ANONYMOUS violated: the anonymous class, in the body of another
             // anonymous class, implements the immutable interface Badge
             final Badge inner = new Badge() {};
         };
-        outer.hashCode();
     }
 }

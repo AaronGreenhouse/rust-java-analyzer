@@ -42,8 +42,8 @@ class Audit
 
 @Immutable
 interface Outline
-        // IMM-SUPERINTERFACE satisfied: Figure, imported from another package, is
-        // immutable
+        // IMM-SUPERINTERFACE satisfied: the superinterface Figure, imported from another
+        // package, is immutable
         // IMM-SUBINTERFACE satisfied: the subinterface of immutable Figure, imported from
         // another package, is immutable
         extends Figure {}

@@ -67,22 +67,13 @@ interface Comparer {
     boolean equals(Comparer other);
 }
 
-// IMM-LAMBDA satisfied: the interface has two abstract methods
+// IMM-LAMBDA violated: the interface inherits two abstract methods from immutable Range,
+// but declares a default method for high, which leaves exactly one abstract method, low
 @Immutable
-interface Pair {
-    int first();
-
-    int second();
-}
-
-// IMM-LAMBDA violated: the interface inherits two abstract methods from immutable Pair,
-// but declares a default method for second, which leaves exactly one abstract method,
-// first
-@Immutable
-interface FirstOnly
-        extends Pair {
+interface LowOnly
+        extends Range {
     @Override
-    default int second() {
+    default int high() {
         return 0;
     }
 }

@@ -34,6 +34,5 @@ class Pipeline {
         // IMM-LAMBDA not applicable: the lambda targets immutable Generator and captures
         // mutable state, but the error is reported at the declaration of Generator
         Generator counter = () -> state[0]++;
-        counter.next();
     }
 }

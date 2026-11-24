@@ -47,7 +47,7 @@ class Bank {
 
     class Teller
             // IMM-SUBCLASS violated: the inner subclass of immutable Account is not
-            // marked
+            // marked. Marking it is not possible because of IMM-INNER.
             extends Account {}
 
     // IMM-INNER violated: an inner class is marked immutable

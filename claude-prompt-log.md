@@ -1156,3 +1156,52 @@ Nothing is committed yet. Part C, the simplifications, is all that's left from t
 ### Prompt
 
 commit and push
+
+### Response
+
+I committed the new test cases as f4b5177, "Add the missing immutable test cases found in the review," and pushed it to `7-use-a-subagent-to-verify-the-test-cases-against-the-analysis-description`.
+
+The commit has the 7 new files in `crosspackage/` and the 11 test files I changed. It also includes `claude-prompt-log.md`.
+
+Part C, the simplifications, is all that's left from the review.
+
+## 2026-11-24 14:02 EST
+
+### Prompt
+
+Now let's address part C
+
+### Response
+
+I've made the part C changes that were clear-cut. The tests still compile, and `javac -Xlint:all` reports no warnings. For three items, my recommendation is to change nothing; you can overrule me on any of them.
+
+## What I changed
+
+- **Item 3, duplicate cases:**
+  - I deleted `Pair` from [LambdaViolated.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/anonymous/LambdaViolated.java), because it repeated `Range`. The test that used `Pair` is now `LowOnly extends Range`, which makes `high` a default method and leaves `low` as its only abstract method.
+  - I deleted `Coin` and its two constructors from [AnonymousSatisfied.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/anonymous/AnonymousSatisfied.java). `Priority.LOW` already covers an enum constant without a body.
+- **Item 4, code that wasn't needed:**
+  - I removed the `hidden()` method from [FinalClassViolated.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/finalfields/FinalClassViolated.java).
+  - I removed seven calls that only used a variable: the `.hashCode()` and `.run()` calls in the anonymous-class files, and `counter.next()` in `LambdaUsage.java`.
+- **Item 7, wording:**
+  - `Teller` now has "Marking it is not possible because of IMM-INNER", like the other unmarked inner and local classes.
+  - All IMM-SUPERINTERFACE comments now say "the superinterface X", to match "the superclass X" in the IMM-SUPERCLASS comments. I rewrapped the ones that got too long.
+  - `MarkedContainer` now has an IMM-MARK comment.
+- **Item 1**, consistent comment conventions, was already done in part A.
+
+## What I recommend leaving as it is
+
+- **Item 2, moving helper types into their own files.** This would break the marking rule. A helper file would test no rule, so its positive results would go unmarked, even though they are results for the rules its package tests. Part A already solved the underlying problem by marking those positives.
+- **Item 3, the fully qualified marker in `MarkedTypes` and in `DecoyAnnotated`.** These two tests cover different things. The one in `MarkedTypes` is the basic case. The one in `DecoyAnnotated` checks that the fully qualified name still finds the real annotation when an import makes `Immutable` refer to the decoy. An analyzer could pass one and fail the other.
+- **Item 3, `Generator` and `Source`.** I kept `Generator` so that `LambdaUsage.java` stays self-contained, as the review also suggested.
+- **Item 5, putting each field kind once in `fieldtypes/`.** The repeats test each kind of type in each kind of field. Examples are an array in a record component and a type variable in an interface constant. An implementation could easily miss one of those combinations, so I think the repeats earn their keep.
+- **Item 6, one naming scheme for files.** `FieldTypeArrays` and `LambdaUsage` describe what they test better than a `*Satisfied` or `*Violated` suffix would. Several of those files also contain both kinds of result. I'd keep the suffix only where one topic is split into a satisfied file and a violated file, as it is now.
+- **Item 7, which comments cite JLS sections.** The citations appear where the behavior is surprising, such as a type being implicitly static or implicitly final. Adding them everywhere would just be noise.
+
+Nothing is committed yet. Do you want me to make any of the changes I've recommended skipping, or should I commit and push what's there now?
+
+## 2026-11-24 14:05 EST
+
+### Prompt
+
+This is fine; commit and push
