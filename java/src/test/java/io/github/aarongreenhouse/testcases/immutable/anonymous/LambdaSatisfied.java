@@ -2,8 +2,8 @@ package io.github.aarongreenhouse.testcases.immutable.anonymous;
 
 import io.github.aarongreenhouse.promises.Immutable;
 
-// IMM-LAMBDA is checked at the declaration of each immutable interface: the interface
-// must not be a functional interface (JLS §9.8).
+// NOTE: IMM-LAMBDA is checked at the declaration of each immutable interface: the
+// interface must not be a functional interface (JLS §9.8).
 
 // IMM-LAMBDA satisfied: the interface has no abstract methods
 @Immutable
@@ -21,7 +21,6 @@ interface Range {
 // immutable Range
 @Immutable
 interface Span
-        // IMM-SUBINTERFACE satisfied: the subinterface of immutable Range is immutable
         extends Range {}
 
 // IMM-LAMBDA satisfied: the interface has only default and static methods, which are
@@ -60,8 +59,6 @@ sealed interface Expr permits Literal {
 
 @Immutable
 record Literal(int value)
-        // IMM-SUBINTERFACE satisfied: the implementing record of immutable Expr is
-        // immutable
         implements Expr {
     @Override
     public int eval() {

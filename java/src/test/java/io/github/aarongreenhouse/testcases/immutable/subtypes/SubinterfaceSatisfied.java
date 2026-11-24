@@ -45,7 +45,6 @@ final class Square
 final class Ring
         // IMM-SUBINTERFACE satisfied: the class implements immutable Shape through its
         // superclass Circle, and is immutable
-        // IMM-SUBCLASS satisfied: the subclass of immutable Circle is immutable
         extends Circle {}
 
 class ShapeHolder {

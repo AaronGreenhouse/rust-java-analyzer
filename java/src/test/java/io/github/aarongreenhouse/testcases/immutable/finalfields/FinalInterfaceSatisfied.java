@@ -2,7 +2,7 @@ package io.github.aarongreenhouse.testcases.immutable.finalfields;
 
 import io.github.aarongreenhouse.promises.Immutable;
 
-// IMM-FINAL-INTERFACE cannot be violated: every field declared in an interface is
+// NOTE: IMM-FINAL-INTERFACE cannot be violated: every field declared in an interface is
 // implicitly final (JLS §9.3). So there are only tests that it is satisfied.
 
 @Immutable
@@ -13,7 +13,7 @@ interface Limits {
     // IMM-FINAL-INTERFACE satisfied: the field is declared final
     final int MAX = 100;
 
-    // IMM-FINAL-INTERFACE satisfied: the field is declared public, static, and final
+    // IMM-FINAL-INTERFACE satisfied: the field is declared final
     public static final int DEFAULT = 50;
 
     // IMM-FINAL-INTERFACE satisfied: the field is declared static but is implicitly

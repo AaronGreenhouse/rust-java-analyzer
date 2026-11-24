@@ -24,6 +24,7 @@ class Car
         // IMM-SUBCLASS satisfied: the subclass of immutable Vehicle is immutable
         extends Vehicle {}
 
+// IMM-SUBCLASS satisfied: the class is declared final, so it has no subclasses
 @Immutable
 final class SportsCar
         // IMM-SUBCLASS satisfied: the subclass of immutable Car, and through it of
@@ -33,6 +34,7 @@ final class SportsCar
 @Immutable
 abstract class Engine {}
 
+// IMM-SUBCLASS satisfied: the class is declared final, so it has no subclasses
 @Immutable
 final class Diesel
         // IMM-SUBCLASS satisfied: the subclass of immutable abstract class Engine is
@@ -40,6 +42,7 @@ final class Diesel
         extends Engine {}
 
 class Garage {
+    // IMM-SUBCLASS satisfied: the class is declared final, so it has no subclasses
     @Immutable
     static final class Truck
             // IMM-SUBCLASS satisfied: the static nested subclass of immutable Vehicle is
@@ -50,6 +53,7 @@ class Garage {
 @Immutable
 sealed class Tree permits TreeLeaf, TreeNode {}
 
+// IMM-SUBCLASS satisfied: the class is declared final, so it has no subclasses
 @Immutable
 final class TreeLeaf
         // IMM-SUBCLASS satisfied: the permitted subclass of immutable Tree is immutable
@@ -68,6 +72,7 @@ class Apple {
     int weight;
 }
 
+// IMM-SUBCLASS satisfied: the class is declared final, so it has no subclasses
 @Immutable
 final class AppleCrate
         // IMM-SUBCLASS satisfied: the subclass of the immutable generic class Crate is

@@ -2,12 +2,15 @@ package io.github.aarongreenhouse.testcases.immutable.supertypes;
 
 import io.github.aarongreenhouse.promises.Immutable;
 
+// IMM-SUPERCLASS satisfied: the superclass is implicitly java.lang.Object
 @Immutable
 class ImmutableBase {}
 
+// IMM-SUPERCLASS satisfied: the superclass is implicitly java.lang.Object
 @Immutable
 abstract class ImmutableAbstractBase {}
 
+// IMM-SUPERCLASS satisfied: the superclass is implicitly java.lang.Object
 @Immutable
 class ImmutableGenericBase<T> {}
 
@@ -16,6 +19,7 @@ class MutableTypeArgument {
 }
 
 class SuperclassHolder {
+    // IMM-SUPERCLASS satisfied: the superclass is implicitly java.lang.Object
     @Immutable
     static class ImmutableNestedBase {}
 }

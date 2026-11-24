@@ -17,7 +17,8 @@
  * <p>A line comment states the expected result of each test. It is placed directly
  * before the code that the result is about: a type declaration, an {@code extends} or
  * {@code implements} clause, a field, a variable declarator, a record component, an enum
- * constant, or a class instance creation expression. The comments have these forms:
+ * constant, or a class instance creation expression. A comment before a declaration also
+ * covers a {@code new} expression in its initializer. The comments have these forms:
  *
  * <ul>
  *   <li>{@code // IMM-RULE satisfied: <case>} expects a positive result for the rule.

@@ -7,7 +7,6 @@ interface Badge {}
 
 @Immutable
 interface VipBadge
-        // IMM-SUBINTERFACE satisfied: the subinterface of immutable Badge is immutable
         extends Badge {}
 
 @Immutable

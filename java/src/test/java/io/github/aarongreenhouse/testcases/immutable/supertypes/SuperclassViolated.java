@@ -16,6 +16,7 @@ class MutableGenericBase<T> {
     T value;
 }
 
+// IMM-SUPERCLASS satisfied: the superclass is implicitly java.lang.Object
 @Immutable
 class ImmutableRoot {}
 

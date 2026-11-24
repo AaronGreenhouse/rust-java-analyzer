@@ -2,8 +2,8 @@ package io.github.aarongreenhouse.testcases.immutable.anonymous;
 
 import io.github.aarongreenhouse.promises.Immutable;
 
-// IMM-LAMBDA is checked at the declaration of each immutable interface: the interface
-// must not be a functional interface (JLS §9.8).
+// NOTE: IMM-LAMBDA is checked at the declaration of each immutable interface: the
+// interface must not be a functional interface (JLS §9.8).
 
 // IMM-LAMBDA violated: the interface has exactly one abstract method
 @Immutable
@@ -44,7 +44,6 @@ interface Action {
 // immutable Source
 @Immutable
 interface CountingSource
-        // IMM-SUBINTERFACE satisfied: the subinterface of immutable Source is immutable
         extends Source {}
 
 // IMM-LAMBDA violated: the interface's one abstract method is generic. A lambda cannot
@@ -81,7 +80,6 @@ interface Pair {
 // first
 @Immutable
 interface FirstOnly
-        // IMM-SUBINTERFACE satisfied: the subinterface of immutable Pair is immutable
         extends Pair {
     @Override
     default int second() {
@@ -105,8 +103,5 @@ interface Stream {
 // two methods have the same signature, so they count as one abstract method (JLS §9.8).
 @Immutable
 interface Channel
-        // IMM-SUBINTERFACE satisfied: the subinterface of immutable Reader is immutable
         extends Reader,
-                // IMM-SUBINTERFACE satisfied: the subinterface of immutable Stream is
-                // immutable
                 Stream {}

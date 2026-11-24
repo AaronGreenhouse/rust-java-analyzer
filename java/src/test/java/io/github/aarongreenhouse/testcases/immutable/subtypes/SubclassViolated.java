@@ -66,6 +66,7 @@ class Bank {
 @Immutable
 sealed class Payment permits Cash, Card {}
 
+// IMM-SUBCLASS satisfied: the class is declared final, so it has no subclasses
 @Immutable
 final class Cash
         // IMM-SUBCLASS satisfied: the permitted subclass of immutable Payment is
