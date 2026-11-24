@@ -983,3 +983,128 @@ I committed the part (A) fixes and pushed them to GitHub.
 - **Branch:** `7-use-a-subagent-to-verify-the-test-cases-against-the-analysis-description`. The branch didn't exist on GitHub before, so the push created it there and the local branch now tracks it.
 - **What's in it:** the 14 changed test-case files and the `.gitignore` change.
 - **Left out:** `claude-prompt-log.md` is still uncommitted, because you've been committing the log yourself. The review in `temp-results/` is ignored, so it isn't in the commit either.
+
+## 2026-11-24 13:42 EST
+
+### Prompt
+
+Lets address the part B spec gaps first.
+(1) One per immutable ancestor
+(2) Yes, explicitly choose the extends/implements clause
+(3) ?
+(4) ?
+(5) Let's assume the code base we are given is able to be compiled.  So we have access at minimum to the standard java library classfiles.
+(6) @Immutable on an annotation doesn't make sense.  The analysis should flag this is nonsense.  We will need new testcases for this.
+(7) Favor declared final over implicitly final
+(8) These should be checked as if they are part of the enum
+
+### Response
+
+I've written your decisions for gaps 1, 2, 5, 6, 7 and 8 into [analyses/Immutable.md](analyses/Immutable.md). The markdownlint warnings that came up during the edits were about links to the new Annotation interfaces section, made before I had added it. They should clear now that it exists.
+
+| Gap | What the spec now says |
+|---|---|
+| 1, 2 | Under Subtypes: a subtype gets one result for each immutable type it is a subtype of, directly or indirectly. That result is placed on its `extends` or `implements` clause that leads to that ancestor. `SportsCar` therefore gets two results, both on `extends Car`. Ancestors that aren't immutable don't count, so `HighYield` gets one error, for `Account`. If two clauses lead to the same ancestor, the result goes on the first one. |
+| 5 | Under Scope: the analyzed source is assumed to compile, so the analyzer may read library class files to resolve names, members and supertypes. Library types are still outside the analyzed source, so they still count as not immutable. |
+| 6 | A new rule, **IMM-ANNOTATION**: putting `@Immutable` on an annotation interface is an error. No other rule is checked for an annotation interface, and it never counts as immutable. I also noted that `@Target` can't keep the annotation off annotation interfaces, which is why the analyzer has to report it. |
+| 7 | A field that is both declared final and implicitly final is reported as declared final. |
+| 8 | Fields in an enum constant's class body are checked as fields of the enum. That is in addition to the IMM-ANONYMOUS error for the class body. |
+
+Three of these decisions mean the tests need to change. I haven't touched them yet:
+
+- **Gap 1:** every indirect subtype needs a separate comment for each immutable ancestor, instead of today's single combined comment. That affects `SportsCar`, `Puppy`, `Ring`, `HighYieldSavings` and similar cases.
+- **Gap 6:** there are no tests for IMM-ANNOTATION yet.
+- **Gap 8:** there are no tests for fields in an enum constant's class body yet.
+
+## Gap 3: results when a rule has nothing to check
+
+I suggest this principle: **report a positive result only where the spec defines a case for it.** Don't report one just because nothing went wrong. This is the one ruling that changes existing tests; for the others, the tests already match.
+
+- **IMM-SUPERINTERFACE, for an immutable interface with no superinterfaces:** I'd give it a **positive result** ("has no superinterfaces"). That matches IMM-SUPERCLASS, where a class that implicitly extends `Object` gets a positive result. The tests currently say "not applicable", so they would change.
+- **IMM-SUBCLASS, for a non-final class with no subclasses:** **no result**. A positive result would be misleading, because a subclass outside the analyzed source could still break the rule. This matches the tests.
+- **IMM-INNER:** a **positive result for a marked nested type** that is static, explicitly or implicitly, and **no result for a top-level type**, where the question doesn't arise. This matches the tests.
+- **IMM-ANONYMOUS:** **errors only**, because the rule is about anonymous classes, and an enum constant without a body doesn't create one. So I'd drop the positive result for an enum constant without a body. The only test that has one is `Priority.LOW`. The "not applicable" comments can stay.
+
+## Gap 4: IMM-SUBCLASS for an immutable enum whose constants have bodies
+
+I recommend that **every enum trivially satisfies IMM-SUBCLASS**, with or without constant bodies. No class declaration can extend an enum (JLS §8.9). Its only possible subclasses are its constant bodies, and IMM-ANONYMOUS already reports those as errors. So the spec's third bullet, under "can have no subclasses", would become just "an enum". `Operation` and `Priority` in `EnumConstantBodies.java` would then each get a trivially satisfied positive result.
+
+Do you agree with these recommendations for gaps 3 and 4? Once you've decided, I'll update the spec, then make the test changes for all eight gaps.
+
+## 2026-11-24 13:49 EST
+
+### Prompt
+
+yes, go with your recommendations for 3 and 4
+
+### Response
+
+I've finished all eight spec gaps: [analyses/Immutable.md](analyses/Immutable.md) states each decision, and the tests now follow them. The tests compile with `mvn clean test-compile`, and `javac -Xlint:all` reports no warnings. No line is longer than 90 characters.
+
+## Changes to the spec for gaps 3 and 4
+
+- **Results:** a positive result is reported only where a rule defines a case for it, including the trivial cases the rules name. Nothing being wrong isn't enough.
+- **IMM-SUPERINTERFACE:** an immutable interface with no superinterfaces satisfies the rule.
+- **IMM-SUBCLASS:** every enum is now one of the trivially satisfied cases. A non-final class with no subclasses gets no result.
+- **IMM-INNER:** an immutable nested type that is static, explicitly or implicitly, gets a positive result. A top-level type gets none.
+- **IMM-ANONYMOUS and IMM-ANNOTATION:** both rules report only errors.
+
+## Changes to existing tests
+
+- **Gap 1, one result per immutable ancestor:** `SportsCar`, `BusinessChecking`, `Square`, `HousePet` and `Cat` each now have two comments, one per immutable ancestor. On `HighYieldSavings` and `Puppy`, the comment now explains that the unmarked class in between doesn't count as an ancestor.
+- **Gap 2, results on the clause:** six subtype errors sat before the type declaration, so I moved them onto its `extends` or `implements` clause. They are `FancyPen`, `UnmarkedSubclass`, `DecoySubclass`, `PostageStamp`, `UnmarkedMiddle` and `UnmarkedChild`.
+- **Gap 3, no positive results where nothing is checked:**
+  - Six immutable interfaces with no superinterfaces now have IMM-SUPERINTERFACE satisfied comments. `NoSuperinterfaces` previously said "not applicable".
+  - The three IMM-ANONYMOUS positives for enum constants without bodies, `Priority.LOW`, `Coin.PENNY` and `Coin.NICKEL`, now say "not applicable". I didn't delete them, because they still show the analyzer that a constant without a body gets no result.
+- **Gap 4, enums trivially satisfy IMM-SUBCLASS:** I added `EnumWithBody` to [SubclassSatisfied.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/subtypes/SubclassSatisfied.java). It is an enum with a constant body that satisfies IMM-SUBCLASS, and its constant body has an IMM-ANONYMOUS error.
+- **Gap 7, declared final wins:** this needed no test changes. The tests already report "declared final" for interface fields written with `final`.
+- **[package-info.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/package-info.java):** it lists the new `annotations` package. It also says where a subtype result goes, that there is one result per ancestor, and which positive results are expected.
+
+## New tests
+
+- **Gap 6, [annotations/AnnotationViolated.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/annotations/AnnotationViolated.java), plus a `package-info.java` for the package:**
+  - marked annotation interfaces: an empty one, one with elements and a constant, and a nested one;
+  - an unmarked annotation interface, which gets no result;
+  - a class that implements a marked annotation interface, which gets no IMM-SUBINTERFACE result;
+  - an immutable class with a field whose type is a marked annotation interface: an IMM-FIELD-TYPE error, because annotation interfaces never count as immutable.
+- **Gap 8, fields in an enum constant's class body:**
+  - [finalfields/FinalEnumConstantBody.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/finalfields/FinalEnumConstantBody.java) checks IMM-FINAL-CLASS on such fields.
+  - [fieldtypes/FieldTypeEnumConstantBody.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/fieldtypes/FieldTypeEnumConstantBody.java) checks IMM-FIELD-TYPE on them.
+
+  Each file includes an enum that isn't immutable, as a "not applicable" case.
+
+Nothing is committed yet. The other part B items, the missing test cases, and part C are still to do.
+
+## 2026-11-24 13:55 EST
+
+### Prompt
+
+commit and push
+
+### Response
+
+I committed the spec-gap changes as 90f737b, "Resolve the spec gaps found in the test case review," and pushed it to `7-use-a-subagent-to-verify-the-test-cases-against-the-analysis-description`.
+
+The commit has the updated spec, the 15 test files I changed, and the 4 new ones. As before, `claude-prompt-log.md` is left out for you to commit yourself.
+
+The branch on GitHub already had one commit after a6e1936, 509624e, so the new commit went on top of it.
+
+Still to do from the review: the missing test cases in part B, and the simplifications in part C.
+
+## 2026-11-24 13:57 EST
+
+### Prompt
+
+You should also make sure the claude-prompt-log.md file is included in staged files when committing because it contains the prompts that brought the workspace to the current condition.
+
+### Response
+
+Got it. From now on I'll stage `claude-prompt-log.md` in every commit I make. I've saved that as a standing instruction for this project, so it carries over to future sessions.
+
+The two commits I made this session, a6e1936 and 90f737b, left the log out, so its current changes are still uncommitted. Do you want me to commit it now as a follow-up and push?
+
+## 2026-11-24 13:57 EST
+
+### Prompt
+
+yes, commit and push
