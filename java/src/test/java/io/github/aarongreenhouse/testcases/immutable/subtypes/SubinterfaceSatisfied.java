@@ -56,6 +56,13 @@ class ShapeHolder {
             // immutable Shape is immutable
             implements Shape {}
 
+    // IMM-INNER violated: an inner class is marked immutable
+    @Immutable
+    class Sticker
+            // IMM-SUBINTERFACE satisfied: the inner implementing class of immutable Shape
+            // is marked. The error for it is reported by IMM-INNER.
+            implements Shape {}
+
     void draw() {
         @Immutable
         record Point(int x, int y)

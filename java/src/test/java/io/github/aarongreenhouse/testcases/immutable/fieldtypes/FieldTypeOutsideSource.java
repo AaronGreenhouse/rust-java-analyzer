@@ -31,6 +31,14 @@ class Profile {
     // qualified name, is outside the analyzed source
     final java.time.DayOfWeek birthday = null;
 
+    // IMM-FIELD-TYPE violated: java.lang.Enum is allowed as a superclass, but not as a
+    // field type, and is outside the analyzed source
+    final Enum<?> anyEnum = null;
+
+    // IMM-FIELD-TYPE violated: java.lang.Record is allowed as a superclass, but not as a
+    // field type, and is outside the analyzed source
+    final Record anyRecord = null;
+
     // IMM-FIELD-TYPE violated: java.lang.String is outside the analyzed source, in a
     // static field
     static final String PREFIX = "profile";

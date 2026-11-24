@@ -33,6 +33,10 @@ class PostageStamp
         // IMM-SUBCLASS violated: the subclass of immutable Stamp is not marked
         extends Stamp {}
 
+interface Lanyard
+        // IMM-SUBINTERFACE violated: the subinterface of immutable Badge is not marked
+        extends Badge {}
+
 class Venue {
     // IMM-ANONYMOUS violated: the anonymous class implements the immutable interface
     // Badge
@@ -74,6 +78,11 @@ class Venue {
     // immutable. The anonymous class is still a subclass of immutable Stamp, but the
     // error is reported at PostageStamp by IMM-SUBCLASS.
     final PostageStamp postage = new PostageStamp() {};
+
+    // IMM-ANONYMOUS not applicable: the interface named here, Lanyard, is not immutable.
+    // The anonymous class still implements immutable Badge, but the error is reported
+    // at Lanyard by IMM-SUBINTERFACE.
+    final Lanyard lanyard = new Lanyard() {};
 
     static {
         // IMM-ANONYMOUS violated: the anonymous class, in a static initializer,

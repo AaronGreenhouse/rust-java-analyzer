@@ -65,3 +65,20 @@ record Literal(int value)
         return value;
     }
 }
+
+// IMM-LAMBDA satisfied: the interface has one abstract method, but is sealed. It has no
+// permits clause, so its permitted subtypes are those declared in this file
+// (JLS §9.1.1.4).
+@Immutable
+sealed interface Token {
+    int length();
+}
+
+@Immutable
+final class Word
+        implements Token {
+    @Override
+    public int length() {
+        return 1;
+    }
+}

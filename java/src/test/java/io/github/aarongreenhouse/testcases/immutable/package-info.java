@@ -13,6 +13,9 @@
  *   <li>{@code nested}: IMM-INNER
  *   <li>{@code anonymous}: IMM-ANONYMOUS, IMM-LAMBDA
  *   <li>{@code annotations}: IMM-ANNOTATION
+ *   <li>{@code crosspackage}: IMM-SUPERCLASS, IMM-SUPERINTERFACE, IMM-SUBCLASS,
+ *       IMM-SUBINTERFACE, and IMM-FIELD-TYPE, for types declared in another file or
+ *       package
  * </ul>
  *
  * <p>A line comment states the expected result of each test. It is placed directly

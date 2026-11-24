@@ -62,6 +62,13 @@ class Bank {
                 // IMM-SUBCLASS violated: the local subclass of immutable Account is not
                 // marked. Marking it is not possible because of IMM-INNER.
                 extends Account {}
+
+        // IMM-INNER violated: a local class is an inner class
+        @Immutable
+        class Receipt
+                // IMM-SUBCLASS satisfied: the local subclass of immutable Account is
+                // marked. The error for it is reported by IMM-INNER.
+                extends Account {}
     }
 }
 

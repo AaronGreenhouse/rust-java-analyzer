@@ -18,6 +18,21 @@ class MutableTypeArgument {
     int count;
 }
 
+class MutableAncestor {
+    int count;
+}
+
+@Immutable
+class FlawedBase
+        // IMM-SUPERCLASS violated: the superclass MutableAncestor is not immutable
+        extends MutableAncestor {}
+
+@Immutable
+class ExtendsFlawedBase
+        // IMM-SUPERCLASS satisfied: the superclass FlawedBase is declared immutable. It
+        // counts as immutable even though it has errors of its own.
+        extends FlawedBase {}
+
 class SuperclassHolder {
     // IMM-SUPERCLASS satisfied: the superclass is implicitly java.lang.Object
     @Immutable

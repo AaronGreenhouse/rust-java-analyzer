@@ -1108,3 +1108,51 @@ The two commits I made this session, a6e1936 and 90f737b, left the log out, so i
 ### Prompt
 
 yes, commit and push
+
+### Response
+
+I committed the prompt log as 1126b70, "Update the Claude prompt log," and pushed it to `7-use-a-subagent-to-verify-the-test-cases-against-the-analysis-description`.
+
+The log will show as modified again almost right away, because the logging hook adds this exchange to it after the commit. That's expected, and it will go into the next commit.
+
+## 2026-11-24 13:58 EST
+
+### Prompt
+
+Now let's address the missing cases in part B
+
+### Response
+
+I've added tests for all 11 missing cases from part B. Everything compiles with `mvn test-compile`, `javac -Xlint:all` reports no warnings, and no line is longer than 90 characters.
+
+The new tests follow the rules we settled:
+
+- every error is marked, including errors for rules the file isn't testing;
+- positive results are marked only for the rules the file tests;
+- subtype results go on the `extends` or `implements` clause, one for each immutable ancestor.
+
+| # | Case | Where |
+|---|---|---|
+| 1 | **Types in other files and packages.** A new package, [crosspackage/](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/crosspackage/). `lib` declares four types: `Amount` (an immutable class), `Figure` (an immutable interface), `Units.Meter` (a nested immutable class) and `Ledger` (a mutable class). `app` imports them as superclasses, superinterfaces and field types, with both marked and unmarked users. `lib/LooseChange` is an unmarked subclass of `Amount` in another file of the same package, with no import. | `crosspackage/lib/*.java`, `crosspackage/app/CrossPackage.java` |
+| 2 | **Subtypes of an unmarked subinterface.** `Parrot implements Pet` and `Companion extends Pet` each get an error for `Animal`, reached through the unmarked `Pet`. | `subtypes/SubinterfaceViolated.java` |
+| 3 | **Marked types that have errors of their own.** `ExtendsFlawedBase` extends `FlawedBase`, which has an IMM-SUPERCLASS error, and still satisfies IMM-SUPERCLASS. A field of type `Flawed`, which has an IMM-FIELD-TYPE error, still satisfies IMM-FIELD-TYPE. | `supertypes/SuperclassSatisfied.java`, `fieldtypes/FieldTypeImmutableTypes.java` |
+| 4 | **IMM-LAMBDA with sealed and non-sealed interfaces.** `Leaf` is a non-sealed interface that inherits one abstract method from the sealed `Node`, so it violates IMM-LAMBDA. `Token` is sealed with no `permits` clause, so it satisfies the rule. | `anonymous/LambdaViolated.java`, `anonymous/LambdaSatisfied.java` |
+| 5 | **Marked inner and local subtypes.** `Sticker` is a marked inner class that implements `Shape`, and `Receipt` is a marked local class that extends `Account`. Each satisfies the subtype rule and gets an IMM-INNER error. | `subtypes/SubinterfaceSatisfied.java`, `subtypes/SubclassViolated.java` |
+| 6 | **`Enum<?>` and `Record` fields.** Both are IMM-FIELD-TYPE errors. | `fieldtypes/FieldTypeOutsideSource.java` |
+| 7 | **Sealed interface with an unmarked permitted subtype.** `Coat` permits `Fur`, which is marked, and `Feathers`, which is unmarked and is an error. | `subtypes/SubinterfaceViolated.java` |
+| 8 | **Anonymous class of an unmarked subinterface.** `new Lanyard() {}` is "not applicable" for IMM-ANONYMOUS. The error is on `Lanyard`'s `extends Badge`. | `anonymous/AnonymousViolated.java` |
+| 9 | **Raw type and array type argument.** Fields of type `Box` and `Box<int[]>` both satisfy IMM-FIELD-TYPE. | `fieldtypes/FieldTypeImmutableTypes.java` |
+| 10 | **Unmarked local record and enum.** `Visit` and `Feed` implement `Animal` and are errors. Unlike a local class, they could be marked. | `subtypes/SubinterfaceViolated.java` |
+| 11 | **Private and re-abstracted interface methods.** `Printer` has one abstract method and a private method, so it is functional. `FormalGreeter` redeclares a default method inherited from `Greeter` as abstract, so it is functional too. Both violate IMM-LAMBDA. | `anonymous/LambdaViolated.java` |
+
+I also listed `crosspackage` in the top-level [package-info.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/package-info.java).
+
+The cross-package tests are spread over five rules, so they would split awkwardly under any one rule's package. That's why I gave them their own package rather than putting them with the existing ones.
+
+Nothing is committed yet. Part C, the simplifications, is all that's left from the review.
+
+## 2026-11-24 14:01 EST
+
+### Prompt
+
+commit and push

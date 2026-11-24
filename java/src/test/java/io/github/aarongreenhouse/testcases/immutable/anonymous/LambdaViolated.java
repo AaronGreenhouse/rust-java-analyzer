@@ -105,3 +105,43 @@ interface Stream {
 interface Channel
         extends Reader,
                 Stream {}
+
+// IMM-LAMBDA satisfied: the interface has one abstract method, but is sealed
+@Immutable
+sealed interface Node permits Leaf {
+    int size();
+}
+
+// IMM-LAMBDA violated: the interface inherits exactly one abstract method from Node, and
+// is non-sealed rather than sealed
+@Immutable
+non-sealed interface Leaf
+        extends Node {}
+
+// IMM-LAMBDA violated: the interface has exactly one abstract method. Its private
+// method does not count.
+@Immutable
+interface Printer {
+    void print(String text);
+
+    private String pad(String text) {
+        return " " + text;
+    }
+}
+
+// IMM-LAMBDA satisfied: the interface has no abstract methods, only a default method
+@Immutable
+interface Greeter {
+    default String greet() {
+        return "hello";
+    }
+}
+
+// IMM-LAMBDA violated: the interface redeclares the default method greet inherited
+// from Greeter as abstract, so it has exactly one abstract method
+@Immutable
+interface FormalGreeter
+        extends Greeter {
+    @Override
+    String greet();
+}
