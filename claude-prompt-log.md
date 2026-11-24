@@ -670,3 +670,316 @@ commit and push
 The logo work is committed as 27a8163 and pushed to `4-create-a-logo-for-the-project` on GitHub, the first push of that branch. The commit includes the logo files, the README changes, and the latest prompt log entries.
 
 The new social preview banner won't show up on GitHub until you upload `docs/logo/social-preview.png` yourself: on the repository's **Settings** page, look under **General** for **Social preview**.
+
+## 2026-11-23 17:35 EST
+
+### Prompt
+
+<ide_opened_file>The user opened the file /Users/aaron/VSCode Examples/rust-java-analyzer/analyses/Immutable.md in the IDE. This may or may not be related to the current task.</ide_opened_file>
+Launch a subagent to independently verify the testcases against the analysis description.  Are there any missing cases?  Can the test cases be simplified in any way.
+
+### Response
+
+I started a subagent in the background to review the test cases on its own. It's reading [analyses/Immutable.md](analyses/Immutable.md) and every file under [java/src/test/java/io/github/aarongreenhouse/testcases/immutable/](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/). It will answer three questions:
+
+- **Correctness:** is every expected-result comment right, and in the right place, according to the spec and the conventions in `package-info.java`? If Maven is available, it will also try compiling the test cases.
+- **Missing cases:** which spec rules, clauses and edge cases have no test? It will also look at Java features the rules could plausibly affect, like records, enums, sealed types, generics and arrays. Where the spec doesn't say what should happen, it will list the case as a gap in the spec rather than a missing test.
+- **Simplification:** are there redundant tests, files that could be merged or split, or comments and code that are harder to read than they need to be?
+
+It will only read files, not change them. When it finishes, I'll check what it reports before passing it on to you.
+
+## 2026-11-23 22:19 EST
+
+### Prompt
+
+<task-notification>
+<task-id>a3c7df25cd62778c2</task-id>
+<tool-use-id>toolu_01HxXyJ2NxBF9FFf3qENUEU5</tool-use-id>
+<output-file>/private/tmp/claude-502/-Users-aaron-VSCode-Examples-rust-java-analyzer/5e0f3316-efb2-4d39-a0a1-b2e72bec2da8/tasks/a3c7df25cd62778c2.output</output-file>
+<status>completed</status>
+<summary>Agent "Verify immutable test cases" finished</summary>
+<note>A task-notification fires each time this agent stops with no live background children of its own. The user can send it another message and resume it, so the same task-id may notify more than once.</note>
+<result># Review of the `@Immutable` test cases
+
+All paths below are relative to `java/src/test/java/io/github/aarongreenhouse/testcases/immutable/`.
+
+**Overall:** The test cases are in good shape. They compile cleanly and the `IMM-* violated:` comments look correct. The real problems are about 13 missing positive-result comments, one misplaced comment, and several places where the spec does not say how many results to expect or where they go. No files were changed.
+
+**Compile check:** `mvn -f java/pom.xml test-compile` reports BUILD SUCCESS. Its only warning is that the `maven-compiler-plugin` version is not set. Maven considered the build up to date, so I also compiled every source from scratch with `javac --release 26 -Xlint:all -Xdoclint:all,-missing` into the scratchpad. That gave exit code 0, no warnings, and 277 class files.
+
+**CLAUDE.md:** All files follow it. Every test file is under `io.github.aarongreenhouse.testcases.immutable.*` in `java/src/test/java`. The decoy annotation `marker/decoy/Immutable.java` sits outside `promises`, which is fine because it is test input, not an annotation for the analyses.
+
+## A. Correctness
+
+I re-checked every `violated:` comment against the spec and found none that is wrong. The issues are missing positive results and placement.
+
+1. **Missing IMM-SUBCLASS positives for final classes (high confidence).** The spec says (line 83) "A class that can have no subclasses trivially satisfies IMM-SUBCLASS and is positively marked as such." The files that test IMM-SUBCLASS mark this for `FinalLeaf`, `FinalRecord` and `FinalEnum`, but not for these other final classes:
+   - `subtypes/SubclassSatisfied.java:28` (`SportsCar`)
+   - `subtypes/SubclassSatisfied.java:37` (`Diesel`)
+   - `subtypes/SubclassSatisfied.java:44` (`Garage.Truck`)
+   - `subtypes/SubclassSatisfied.java:54` (`TreeLeaf`)
+   - `subtypes/SubclassSatisfied.java:72` (`AppleCrate`)
+   - `subtypes/SubclassViolated.java:70` (`Cash`)
+
+   **Fix:** add `// IMM-SUBCLASS satisfied: the class is declared final, so it has no subclasses` on each type declaration. These classes then carry two IMM-SUBCLASS results each: this one on the declaration, and the existing one on the `extends` clause.
+
+2. **Missing IMM-SUPERCLASS positives for the helper base classes (high confidence).** The spec says (line 63) "Supertypes that satisfy these rules should be positively marked." These marked classes implicitly extend `Object`, and the files test IMM-SUPERCLASS:
+   - `supertypes/SuperclassSatisfied.java:6` (`ImmutableBase`)
+   - `supertypes/SuperclassSatisfied.java:9` (`ImmutableAbstractBase`)
+   - `supertypes/SuperclassSatisfied.java:12` (`ImmutableGenericBase`)
+   - `supertypes/SuperclassSatisfied.java:20` (`ImmutableNestedBase`)
+   - `supertypes/SuperclassViolated.java:20` (`ImmutableRoot`)
+
+   The same case is marked at `SuperclassSatisfied.java:23`, so as written these comments are incomplete. **Fix:** add the "implicitly `java.lang.Object`" comment to each, or move the helpers into a file that tests no rule (see C2).
+
+3. **Misplaced comment (high confidence).** In `nested/InnerViolated.java:10-11`, the IMM-INNER comment sits before the field `task` (line 12). The class it is about, `Step`, is declared at lines 13-14 inside the lambda. The package-info says a comment is placed "directly before the code that the result is about: a type declaration". **Fix:** move the comment inside the lambda, directly above `@Immutable` at line 13.
+
+4. **Positives marked for rules the file does not test (medium).** The package-info says "Positive results are marked only for the rules a file is testing." These comments break that:
+   - IMM-SUBINTERFACE positives at `anonymous/AnonymousViolated.java:10`, `anonymous/LambdaSatisfied.java:24` and `:63`, and `anonymous/LambdaViolated.java:47`, `:84`, `:108` and `:110`.
+   - IMM-SUBCLASS at `subtypes/SubinterfaceSatisfied.java:48`.
+
+   The IMM-SUBCLASS one is the worse case. If that file now counts as testing IMM-SUBCLASS, it is missing the "trivially final" positives for `Arrow:27`, `Dot:33`, `Square:39`, `Ring:45` and `Point:60`. **Fix:** delete these comments, or relax the convention to "may mark".
+
+5. **Free-standing notes that look like result comments (medium).** Several explanatory notes begin with `// IMM-RULE ` but are not results and are not attached to any code:
+   - `finalfields/FinalInterfaceSatisfied.java:5`
+   - `supertypes/SuperinterfaceOfClass.java:9`
+   - `anonymous/LambdaSatisfied.java:5`
+   - `anonymous/LambdaViolated.java:5`
+   - `anonymous/LambdaUsage.java:5`
+
+   A harness that matches `// IMM-` could misread them. **Fix:** start them with something like `// Note:`.
+
+6. **IMM-ANONYMOUS comments sit before the declaration, not the expression (low; judgment call).** At `anonymous/AnonymousViolated.java:37-102` and the "not applicable" ones in `AnonymousSatisfied.java`, the comment precedes the field or local variable that contains `new X() {}`. The package-info lists "class instance creation expression" as a placement. In practice the expression is on the next line, but the next syntax node is the field, which is also a placement target. **Fix:** either say in the package-info that a comment before a declaration also covers a `new` expression in its initializer, or put these comments inline.
+
+7. **Wording that does not name the case cleanly (low).** `finalfields/FinalInterfaceSatisfied.java:16` says "declared public, static, and final". The case the spec asks for is "declared final" (spec line 109). See also spec gap 7.
+
+## B. Missing cases
+
+These are cases where the spec says what the result should be, but no test covers it. Most important first.
+
+1. **Types in other files and packages.** No supertype, subtype or field type comes from another package through an import. No subtype rule is exercised across files. The spec calls for name resolution through "imports, packages, and nested types" (line 15), and the subtype rules need the whole analyzed source. **Add:**
+   - an immutable class in package A that is extended, implemented and used as a field type in package B, both marked and unmarked;
+   - an unmarked subclass in a separate file from its immutable superclass.
+2. **Implementing an unmarked subinterface of an immutable interface.** `class X implements Pet {}` (where `Pet extends Animal` is unmarked) is not tested, and neither is `interface Y extends Pet {}`. Spec line 73 says these are reported "even when a type between it and the immutable type is also reported". This is the interface counterpart of `HighYieldSavings`. Add it to `subtypes/SubinterfaceViolated.java`.
+3. **Marked types that themselves have errors.**
+   - `@Immutable class A extends Mutable {}` and `@Immutable class B extends A {}`: B satisfies IMM-SUPERCLASS ("a class that is declared immutable").
+   - A field whose type is a marked type that has errors satisfies IMM-FIELD-TYPE.
+
+   This checks that each type is judged only by the other type's marking, not by whether that type's own checks pass.
+4. **IMM-LAMBDA with `non-sealed`.** `@Immutable non-sealed interface Sub extends Expr {}` inherits one abstract method and is not sealed, so it is functional and violates the rule (spec line 178). Also missing: a sealed interface with no `permits` clause.
+5. **Inner or local subtypes that are marked.** Spec line 150 covers both the class and the interface case. Only `Manager` (an inner class extending an immutable class) is tested. Add:
+   - a marked inner class implementing an immutable interface (IMM-SUBINTERFACE satisfied, IMM-INNER violated);
+   - a marked local class extending an immutable class.
+6. **`java.lang.Enum` or `java.lang.Record` as a field type.** This should be a violation: they are exempt only "as superclasses" (spec line 24). `Object` is tested; these two are not, and an implementation could wrongly allow all three as field types.
+7. **Sealed immutable interface whose permitted subtype is unmarked.** This should be an IMM-SUBINTERFACE violation. Only the class version (`Card`) is tested.
+8. **Anonymous class whose named type is an unmarked subinterface of an immutable interface.** It is "not applicable", and the error goes on the subinterface (spec line 165). Only the class version (`PostageStamp`) is tested.
+9. **Raw immutable generic or array type argument as a field type.** `final Box raw;` and `final Box&lt;int[]&gt; b;` both satisfy IMM-FIELD-TYPE ("whatever its type arguments are").
+10. **Unmarked local record or enum implementing an immutable interface.** Only the marked local record is tested.
+11. **Interfaces with private methods, and re-abstracted defaults.**
+    - An interface with one abstract method plus a private method is still functional.
+    - `interface B extends A { void m(); }`, where `A` has a default `m`, is also functional.
+
+Covered adequately: records, enums with and without constant bodies, sealed, generics and type variables, arrays (including C-style and varargs), String, boxed types, static fields, nested, inner and local classes, default and static interface methods, imported, fully qualified and on-demand annotation names, and multiple inheritance levels. `var` is not relevant because it cannot be used on fields.
+
+## Spec gaps
+
+These are cases where the spec is silent or ambiguous. Most important first.
+
+1. **How many results an indirect subtype gets.** It is unclear whether there is one result per subtype or one per (subtype, immutable ancestor) pair. The tests use one combined comment for indirect cases (`SubclassSatisfied:29`, `SubclassViolated:26`, `SubinterfaceViolated:36`, `:41`, `SubinterfaceSatisfied:40`). They use one comment per clause when a type has several direct supertypes (`LambdaViolated:108-111`). An analyzer that applies each rule once per immutable type would naturally report two results for `SportsCar`.
+2. **Where subtype results go.** The spec does not say. The tests put them on the subtype's `extends`/`implements` clause, including the indirect clause for `Puppy` and `Ring`.
+3. **Positive results for vacuous cases.** The tests implicitly decide several things the spec leaves open:
+   - IMM-SUPERINTERFACE with no superinterfaces: "not applicable" (`SuperinterfaceSatisfied:23`).
+   - IMM-SUBCLASS for a non-final class with no subclasses: no result.
+   - IMM-INNER for top-level types: no result (`InnerSatisfied` leaves `Registry` and `Archive` unmarked).
+   - IMM-ANONYMOUS: a positive result for each enum constant without a body. The spec never defines positive results for this rule.
+4. **IMM-SUBCLASS for an immutable enum whose constants have bodies** (`EnumConstantBodies:9`, `:31`). The enum is not final, and its only subclasses are anonymous, which these rules do not report. The spec does not say what result the enum gets.
+5. **IMM-LAMBDA when abstract methods come from interfaces outside the analyzed source**, for example `@Immutable interface X extends Runnable {}`. Counting them needs information from the library.
+6. **`@Immutable @interface`.** `@Target(TYPE)` allows the annotation on annotation interfaces. The spec's definition of "type" (line 17) leaves them out, and it does not say whether IMM-LAMBDA applies to annotation elements.
+7. **Fields that are both explicitly and implicitly final.** For an interface field written with `final`, the spec does not say whether the case is "declared" or "implicitly" final (`FinalInterfaceSatisfied:14`).
+8. **Fields declared inside an enum constant's class body.** The spec does not say whether they are checked as fields of the enum.
+
+## C. Simplification
+
+1. **Make the convention consistent.** Drop the extra positive comments listed in A4, and rewrite the rule-prefixed notes listed in A5.
+2. **Move unmarked helper types into their own files.** Shared bases (for example `ImmutableBase`, `ImmutableRoot`, `Account`, `Shape`) could go in a per-package file such as `supertypes/Bases.java` that tests no rule. That removes the need for the A2 comments and makes each test file's expected results complete by inspection.
+3. **Remove duplicate cases.**
+   - `LambdaViolated.java:71-77` (`Pair`, a satisfied case in the violated file) is the same as `LambdaSatisfied`'s `Range`. Make `FirstOnly` extend `Range` and delete `Pair`.
+   - `AnonymousSatisfied.java:40-56` (`Coin`) repeats `EnumConstantBodies.java` `Priority.LOW`. Move `PENNY` into `EnumConstantBodies` and delete `Coin`, including its two constructors.
+   - `MarkedTypes.java:25-27` (fully qualified real annotation) is a weaker version of `DecoyAnnotated.java:24-27`. Keep one.
+   - `LambdaUsage`'s `Generator` is the same as `LambdaViolated`'s `Source`. It could reuse `Source`, but keeping the file self-contained is also reasonable.
+4. **Remove needless code.** None of these are needed to compile or to suppress a warning (javac does not warn about unused locals or private fields):
+   - `FinalClassViolated.java:33-35` (the `hidden()` method)
+   - the `.hashCode()` and `.run()` calls in `AnonymousViolated.java:82`, `:89`, `:95`, `:97` and `:104`, in `AnonymousSatisfied.java:36`, and `counter.next()` in `LambdaUsage.java:37`.
+5. **Reduce the repeated "where the field is declared" variants in `fieldtypes`.** Each of the five files repeats "in a static field / interface constant / record component / enum". Put those variants once in a single file (for example with primitives for the satisfied side and `Notebook` for the violated side), and keep the other files to one class each.
+6. **Use consistent file names.** Most files are named `*Satisfied` / `*Violated`. The exceptions are `fieldtypes/*` (named by type kind), `SuperinterfaceOfClass`, `EnumConstantBodies`, `LambdaUsage` and the `marker` files. Pick one scheme.
+7. **Use consistent comment wording.**
+   - "Marking it is not possible because of IMM-INNER" appears for `Entry`, `Cage` and `Stray` but not `Teller` (`SubclassViolated.java:47`).
+   - Most comments say "is immutable", but `SubclassViolated.java:54` says "is marked".
+   - IMM-SUPERINTERFACE comments say "X is immutable", while IMM-SUPERCLASS comments say "the superclass X is immutable".
+   - JLS section numbers are cited in some comments and not in others.
+   - `MarkedContainer` (`MarkedTypes.java:32`) is the only type in the `marker` files without an IMM-MARK comment.</result>
+<usage><subagent_tokens>107492</subagent_tokens><tool_uses>16</tool_uses><duration_ms>17011086</duration_ms></usage>
+</task-notification>
+
+### Response
+
+The subagent's review is done. I checked its three main correctness findings in the source myself, and all three are real. The rest of its findings are its own; I haven't verified them line by line.
+
+**How it checked:** `mvn test-compile` succeeds. It also compiled the test cases with `javac -Xlint:all` and got no warnings. All files follow CLAUDE.md. It found no `violated:` comment that is wrong.
+
+All paths below are under [java/src/test/java/io/github/aarongreenhouse/testcases/immutable/](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/).
+
+## Correctness problems
+
+1. **Missing IMM-SUBCLASS positives on final classes (verified).** The spec says a class with no subclasses "trivially satisfies IMM-SUBCLASS and is positively marked as such." These final classes have no such comment:
+   - `SportsCar`, `Diesel`, `Garage.Truck`, `TreeLeaf` and `AppleCrate` in [subtypes/SubclassSatisfied.java](subtypes/SubclassSatisfied.java)
+   - `Cash` in [subtypes/SubclassViolated.java](subtypes/SubclassViolated.java)
+2. **Missing IMM-SUPERCLASS positives (verified).** In [supertypes/SuperclassSatisfied.java](supertypes/SuperclassSatisfied.java), the helper bases `ImmutableBase`, `ImmutableAbstractBase`, `ImmutableGenericBase` and `ImmutableNestedBase` implicitly extend `Object`. They have no comment, but the same case is marked on `ExtendsImplicitObject`. `ImmutableRoot` in `SuperclassViolated.java` has the same problem.
+3. **Misplaced comment (verified).** In [nested/InnerViolated.java:10-11](nested/InnerViolated.java#L10-L11), the IMM-INNER comment for `Step` sits before the field `task`, not before the class declaration inside the lambda.
+4. **Positive results marked for rules a file doesn't test.** `package-info.java` says not to do this. There are about eight cases: IMM-SUBINTERFACE positives in the `anonymous/` files, and one IMM-SUBCLASS positive in `SubinterfaceSatisfied.java`.
+5. **Notes that look like result comments.** Five explanatory notes start with `// IMM-RULE` but aren't results. A test harness could misread them, so they should start with something like `// Note:`.
+
+## Missing cases
+
+These are the most important cases the spec says how to handle but no test covers:
+
+- **Other files and packages:** no type is ever resolved through an import from another package, and no subtype rule is tested across files.
+- **Unmarked subinterface in the chain:** nothing tests `class X implements Pet`, where `Pet` is an unmarked subinterface of immutable `Animal`. This is the interface version of the existing `HighYieldSavings` test.
+- **Marked types that have their own errors:** a test should show that a marked type still counts as immutable for other types' checks, both as a superclass and as a field type.
+- **IMM-LAMBDA:** there's no `non-sealed` functional interface and no sealed interface without a `permits` clause.
+- **Field types:** `java.lang.Enum` and `java.lang.Record` should be violations as field types, since they are exempt only as superclasses.
+- **Raw and array type arguments:** there's no raw immutable generic, such as `Box`, or array type argument, such as `Box<int[]>`, as a field type.
+- **Interface versions of class-only tests:** no sealed interface with an unmarked permitted subtype, no anonymous class of an unmarked subinterface, and no marked inner class implementing an immutable interface.
+
+## Where the spec is silent
+
+The tests already make choices the spec doesn't state. These are the ones worth writing into [analyses/Immutable.md](../../../../../../../../analyses/Immutable.md):
+
+- how many results an indirect subtype gets: one in total, or one per immutable ancestor;
+- which part of a subtype's declaration its subtype results are attached to;
+- what result a type gets when a rule has nothing to check, such as IMM-SUPERINTERFACE with no superinterfaces or IMM-INNER on a top-level type;
+- what IMM-SUBCLASS reports for an immutable enum whose constants have bodies;
+- whether `@Immutable` on an annotation interface is in scope.
+
+## Simplifications
+
+- **Move shared helpers out:** put helper base types in a per-package file that tests no rule. That removes the need for the comments in correctness item 2, and makes each test file complete by inspection.
+- **Remove duplicates:** `Pair` repeats `Range` in the lambda files, `Coin` repeats `Priority.LOW`, and a fully qualified annotation test in `MarkedTypes.java` repeats one in `DecoyAnnotated.java`.
+- **Remove code that isn't needed:** the `hidden()` method in `FinalClassViolated.java`, and the `.hashCode()`, `.run()` and `.next()` calls in the `anonymous/` files.
+- **Cut repetition in `fieldtypes/`:** each of its five files repeats the same variants (static field, interface constant, record component, enum). They could appear once in a single file.
+- **Make naming and wording consistent:** a few file names don't follow the `*Satisfied`/`*Violated` pattern, and some comments are worded differently for the same thing.
+
+I haven't changed anything. I can fix the correctness problems and add the missing cases. Do you want to settle the spec questions first, since some of the test comments depend on how they're answered?
+
+## 2026-11-24 12:18 EST
+
+### Prompt
+
+Please outputthe results to a markdown file in a new temp-results folder that is added to the .gitignore
+
+### Response
+
+I saved the review to [temp-results/immutable-testcase-review.md](temp-results/immutable-testcase-review.md). It contains everything the subagent reported, plus a note on which findings I checked against the code myself: correctness items A1–A3.
+
+I also added `temp-results/` to [.gitignore](.gitignore), and checked with `git check-ignore` that Git now ignores the new file. Nothing is committed: the only change Git sees is the `.gitignore` edit, plus the prompt log, which the logging hook updates on its own.
+
+## 2026-11-24 13:00 EST
+
+### Prompt
+
+I have manually corrected for Part (A).  I have not addressed the other parts yet, and I do not want you to address them yet.  Only reconsider part (A) right now.
+
+### Response
+
+I re-checked part (A) against your edits. Here is where each item stands:
+
+| Item | Status |
+|---|---|
+| A1: final classes missing IMM-SUBCLASS positives | **Partly done.** `Cash` is fixed. `SportsCar`, `Diesel`, `Garage.Truck`, `TreeLeaf` and `AppleCrate` in [subtypes/SubclassSatisfied.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/subtypes/SubclassSatisfied.java) still have no comment on the declaration. |
+| A2: helper base classes missing IMM-SUPERCLASS positives | Done. |
+| A3: misplaced IMM-INNER comment | Done. |
+| A4: positives marked for rules a file doesn't test | You resolved this by changing the convention instead (see below), and that has a big side effect. |
+| A5: notes that look like result comments | Done. No `// IMM-` comment is left on its own anymore. One nit: [FinalInterfaceSatisfied.java:5](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/finalfields/FinalInterfaceSatisfied.java#L5) has `NOTE:IMM-…` with no space, unlike the others. |
+| A6: placement of IMM-ANONYMOUS comments | Done, through the new sentence in `package-info.java`. |
+| A7: wording of the `DEFAULT` comment | Changed, but "declared static, and final" has a stray comma. Also, `static` doesn't matter to this rule, so "the field is declared final" is enough. |
+
+## The A4 change makes most files incomplete
+
+[package-info.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/package-info.java) now says to mark every positive result for every rule, not just the rules a file is testing. Most files only mark the rules they test, so under the new wording almost all of them are now missing comments. For example:
+
+- No file outside `supertypes/` has an IMM-SUPERCLASS comment. Yet every marked class has an IMM-SUPERCLASS result, even if it only implicitly extends `Object`. [SubclassSatisfied.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/subtypes/SubclassSatisfied.java), for example, has 14 `@Immutable` annotations.
+- Every field of a marked type now also needs a positive IMM-FIELD-TYPE comment and a positive IMM-FINAL-CLASS or IMM-FINAL-INTERFACE comment. Yet the `finalfields/` files mark only IMM-FINAL-CLASS or IMM-FINAL-INTERFACE, and the `fieldtypes/` files mark only IMM-FIELD-TYPE.
+- Every marked final class in any file now needs the "trivially satisfied" IMM-SUBCLASS comment. So does every marked interface that isn't functional, for IMM-LAMBDA.
+
+Bringing the files in line with the new wording would roughly double the number of comments, and most would add noise. Your choices are:
+
+1. **Keep the new rule** and add all the missing positives, which is a large mechanical job.
+2. **Go back to the old rule**: every error is marked, but positives only for the rules a file tests. Then delete the eight or so extra positives from the original A4.
+3. **Choose a middle ground**: positives for other rules *may* be marked but don't have to be. That matches the files as they are now, but a test harness then can't treat a missing positive comment as a failure.
+
+I'd pick option 2, because it keeps each file focused on its own rule.
+
+## Wording of the new sentences in package-info.java
+
+- The new sentence "Similarly, all positive results for the rules a file is testing must be marked, as well as all positive results for rules other than the one a file is testing" just means "all positive results must be marked." If you keep option 1, it could say: "Every expected result is marked: every error and every positive result, for every rule."
+- "A comment before a declaration also covers a new expression in its initializer" should be written `{@code new}`. That way it reads as the keyword rather than the adjective.
+- Both new sentences run past the line width the rest of the file wraps at, and have double spaces before them. The line after the paragraph also now ends in a trailing space (`" * "`).
+
+As you asked, I haven't changed anything, and I haven't touched parts B or C.
+
+## 2026-11-24 13:08 EST
+
+### Prompt
+
+Go with option 2; I manually fixed A comments again.  fix line wrapping in package-info.java.  Don't fix B or C yet.
+
+### Response
+
+I've finished option 2 and the line wrapping. The test cases still compile: `mvn clean test-compile` succeeds.
+
+- **[package-info.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/package-info.java):** The paragraph on which results get marked is back to the original rule. Every error is marked, but positive results only for the rules a file is testing. Your new sentence about a `new` expression in an initializer is now wrapped to the same width as the rest of the file, with its double space and trailing space removed.
+- **Removed eight positives for rules their files don't test:**
+  - IMM-SUBINTERFACE: one in [AnonymousViolated.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/anonymous/AnonymousViolated.java), two in [LambdaSatisfied.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/anonymous/LambdaSatisfied.java) and four in [LambdaViolated.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/anonymous/LambdaViolated.java).
+  - IMM-SUBCLASS: one in [SubinterfaceSatisfied.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/subtypes/SubinterfaceSatisfied.java).
+
+  Errors and "not applicable" comments for other rules are still there, because the rule keeps them.
+
+Two small problems remain in your part (A) edits, and I left them alone:
+
+- [FinalInterfaceSatisfied.java:5](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/finalfields/FinalInterfaceSatisfied.java#L5) has `NOTE:IMM-…` with no space after the colon.
+- Adding `NOTE: ` pushed the first line of four notes past the file's line width: in `LambdaSatisfied.java`, `LambdaViolated.java`, `LambdaUsage.java` and `SuperinterfaceOfClass.java`.
+
+Do you want me to fix those as well? I haven't touched parts B or C.
+
+## 2026-11-24 13:26 EST
+
+### Prompt
+
+yes, fix those too
+
+### Response
+
+I rewrapped the comments that were too long, and the test cases still compile with `mvn test-compile`.
+
+- **The four `NOTE:` comments:** I rewrapped them in [LambdaSatisfied.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/anonymous/LambdaSatisfied.java), [LambdaViolated.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/anonymous/LambdaViolated.java), [LambdaUsage.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/anonymous/LambdaUsage.java) and [SuperinterfaceOfClass.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/supertypes/SuperinterfaceOfClass.java).
+- **One more line:** the IMM-INNER comment you moved into the lambda in [InnerViolated.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/nested/InnerViolated.java) was also too long once indented, so I rewrapped it too.
+- **The missing space after `NOTE:`** in [FinalInterfaceSatisfied.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/finalfields/FinalInterfaceSatisfied.java) was already fixed when I looked.
+
+The longest line in the original files was 90 characters, so I treated that as the limit. No line in the test sources is longer than that now.
+
+Part (A) is finished. Parts B and C are untouched, and nothing is committed.
+
+## 2026-11-24 13:30 EST
+
+### Prompt
+
+commit and push
+
+### Response
+
+I committed the part (A) fixes and pushed them to GitHub.
+
+- **Commit:** a6e1936, "Fix the expected-result comments in the immutable test cases".
+- **Branch:** `7-use-a-subagent-to-verify-the-test-cases-against-the-analysis-description`. The branch didn't exist on GitHub before, so the push created it there and the local branch now tracks it.
+- **What's in it:** the 14 changed test-case files and the `.gitignore` change.
+- **Left out:** `claude-prompt-log.md` is still uncommitted, because you've been committing the log yourself. The review in `temp-results/` is ignored, so it isn't in the commit either.
