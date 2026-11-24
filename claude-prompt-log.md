@@ -1438,3 +1438,287 @@ No tests change, because limitations aren't tested.
 ### Prompt
 
 commit, including claude log
+
+### Response
+
+I committed the prompt log as cac42df on `8-use-a-subagent-to-check-the-analysis-description`. I haven't pushed it.
+
+The log was the only file that changed. The decisions document and the two reviews are in `temp-results/`, which `.gitignore` excludes, so they aren't in the commit. That suits a scratch record, but if you want the decisions document under version control I can add it with `git add -f`.
+
+## 2026-11-24 18:17 EST
+
+### Prompt
+
+please explain more about the "minor gap" for recores
+
+### Response
+
+This is in section 1.3 of the review. Despite the heading, the gap isn't really about records: it applies to the type of any field or record component.
+
+**The gap.** Since Java 8, annotations can be placed *inside* a type, not just in front of a declaration (JLS §9.7.4). So the type the field-type rule has to resolve may have annotations mixed into it:
+
+```java
+record Payment(@NonNull Money amount) {}       // annotation before the type
+final java.lang.@NonNull String name;          // annotation inside a qualified name
+final Map.@NonNull Entry<K, V> entry;          // inside a nested type name
+final List<@NonNull Money> items;              // inside a type argument
+final int @NonNull [] counts;                  // on an array dimension
+```
+
+In the syntax tree these annotations are part of the type. `java.lang.@NonNull String` is no longer a plain dotted name like `java.lang.String`, so a name resolver that expects `a.b.C` won't match it. The spec says nothing about this. The resolver must skip the annotations and resolve the bare type: `java.lang.String`, `Map.Entry`, `int[]`.
+
+**Why it's minor.** It doesn't change what any rule means. The annotations have no effect on whether a type is immutable, so it's only a detail of name resolution. It also can't hide an `@Immutable` marking: `@Immutable` can only be placed on a type declaration, so writing it inside a type doesn't compile. And if a resolver mishandled these annotations, the likely result is an unresolved type, which the analysis treats as not immutable. That gives a false error, not a missed one, so the analysis stays sound.
+
+**Simplest fix.** Add one sentence to the spec where field types are checked: "Annotations within a type are ignored when the type is resolved." Optionally, add one field-type test with a type annotation inside a qualified name and inside a type argument, so the analyzer is exercised on it.
+
+Do you want this added to the decisions document?
+
+## 2026-11-24 18:20 EST
+
+### Prompt
+
+yes, add it to the decisions document; Make the proposed additional test manadatory not optonal.
+
+### Response
+
+I added this to [immutable-decisions.md](temp-results/immutable-decisions.md) as decision 3, with the new test file required rather than optional.
+
+- **Spec change:** after the "In particular" list in IMM-FIELD-TYPE, add one sentence saying that annotations within a type are ignored when the type is resolved.
+- **Required test:** a new file, `fieldtypes/FieldTypeTypeAnnotations.java`. It declares its own type annotation, `@Tagged`, and marks every result. The cases cover:
+  - **Should pass:** fields of an immutable type with `@Tagged` placed four ways:
+    - in front of the modifiers,
+    - just before the type,
+    - inside a fully qualified name,
+    - inside a nested type name.
+
+    Also an immutable generic type with an annotated mutable type argument, an annotated `int`, and an annotated record component.
+  - **Should still fail:** an annotated mutable source type, `java.lang.@Tagged String`, an annotated array dimension, and an array of an annotated element type. These show the annotation doesn't hide the real type.
+- **package-info:** `fieldtypes/package-info.java` gets one matching sentence.
+
+Nothing has been written to the spec or the tests yet.
+
+## 2026-11-24 18:23 EST
+
+### Prompt
+
+Comment about the formatting of the descisions document: the numbering of the decisions should correspond to the numbering of the identified corner cases in teh analysis review.  This probably requires a revision of the section structure in teh decision document.
+
+### Response
+
+I renumbered [immutable-decisions.md](temp-results/immutable-decisions.md) so its sections match the analysis review. Decision 1.2 now answers review item 1.2, and so on.
+
+- **New structure:** "Decided" is replaced by the review's section heading, "1. Missing corner cases". Under it, each decision is headed with its review item and title:
+  - 1.1, lambdas and method references with intersection target types
+  - 1.2, `java.lang.reflect.Proxy`
+  - 1.3, records
+
+  A short **Rule:** line under each heading names the spec rule it changes.
+- **Decision 1.3:** the review raised type annotations under records, but they apply to every field. I added a note saying so, and that the other point in review item 1.3 (where a record component's result goes) belongs to item 2.6.
+- **Open:** each proposal is now tagged with its review item: 1.5 (sealed hierarchies), 1.22 (types outside the source) and 2.6 (where results go). As decisions are made they'll move into the matching section, and new top-level sections will be added for review sections 2 and 4.
+
+The intro now says that the numbering follows the review.
+
+## 2026-11-24 18:25 EST
+
+### Prompt
+
+Still working on 1.3 Records.  The result for a record component should go on the argument declaration that stands in for the field declaration.
+
+### Response
+
+I added your record component decision to [immutable-decisions.md](temp-results/immutable-decisions.md). Section 1.3 Records now has two parts:
+
+- **1.3a, where a record component's result goes:** results for a record component's field go on the component in the record header, which stands in for the field declaration. This covers both IMM-FINAL-CLASS and IMM-FIELD-TYPE. The new paragraph for the spec would go after the one on fields in enum constant bodies:
+
+  > A field that comes from a record component has no field declaration in the source. Its results, for IMM-FINAL-CLASS and IMM-FIELD-TYPE, are reported on the record component in the record header, which stands in for the field declaration.
+
+  No tests change, because they already put these results on the components; `Reading` in `FinalClassSatisfied.java` is one example.
+- **1.3b, annotations within a type:** the earlier decision, unchanged.
+
+I also took record components out of the Open item for 2.6.
+
+## 2026-11-24 18:30 EST
+
+### Prompt
+
+The bullet "Gap: the fields of java.lang.Enum" raises a point that goes beyond Enum: Should we consider java.lang.String to be immutable?
+
+### Response
+
+I recommend yes: treat `String` as immutable, through a short hard-coded list of trusted library types. Right now `String` counts as not immutable, and trusted library types are listed as future work. A test in `FieldTypeOutsideSource.java` expects `final String name` to be an error.
+
+**Why trust `String`:**
+- **We already trust the JDK.** `java.lang.Enum` declares `private final String name`. Trusting `Enum` as a superclass already assumes `String` is immutable. Refusing `String` as a field type while trusting `Enum` is inconsistent.
+- **Usefulness.** Without `String`, almost no realistic immutable class passes, and every name or label field becomes an error.
+- **Simplicity.** It's a list of fully qualified names checked after name resolution. The resolver already tells `java.lang.String` apart from a source class named `String`.
+
+**What keeps it sound:** a type goes on the list only if it is `final` and immutable in practice. A type that can be subclassed could have a mutable subclass, and the analysis can't see library subclasses.
+
+**My proposed list:**
+- **Include:** `String` and the eight boxed primitives: `Boolean`, `Byte`, `Character`, `Short`, `Integer`, `Long`, `Float`, `Double`. All are `final` and immutable.
+- **Exclude `BigInteger` and `BigDecimal`:** they look immutable, but they aren't `final`, so a mutable subclass is possible.
+- **Exclude `Optional`, `List.of(...)` and the like:** they're only as immutable as what they contain.
+- **Exclude `java.time` types for now:** they're `final` and immutable, but leaving them out keeps the list short. They're easy to add later.
+
+**One caveat:** `String` isn't strictly immutable inside, because it caches its hash code in a field it sets later. That change can't be observed from outside, so the spec should say that a trusted type means "immutable as observed through its API".
+
+**Tests that would change:** in `FieldTypeOutsideSource.java`, `name`, `age` and `PREFIX` would become satisfied. They'd probably move to a new `FieldTypeTrustedTypes.java` that marks every trusted type and a few near-misses, such as `BigInteger`. The comment about future work at the top of `FieldTypeOutsideSource.java` would go, along with the future-work item in the spec.
+
+Should I record this as decision 1.4 in the decisions document?
+
+## 2026-11-24 18:31 EST
+
+### Prompt
+
+yes, record it as decision 1.4
+
+### Response
+
+I recorded this in [immutable-decisions.md](temp-results/immutable-decisions.md) as decision 1.4a. Review item 1.4 covers two enum gaps, so this one is 1.4a. The other, compiler-generated fields like `$VALUES`, is now on the Open list.
+
+- **Trusted types:** `java.lang.String` and the eight boxed primitives. A type qualifies only if it is `final` and immutable as seen through its API. `BigInteger`, `BigDecimal`, `Optional` and the like are excluded. `java.time` types are left out for now to keep the list short.
+- **Spec changes to [Immutable.md](analyses/Immutable.md):**
+  - In Scope, the "planned addition" sentence is replaced by the trusted-type exception. It also says `Object`, `Enum` and `Record` are trusted as superclasses, not just allowed.
+  - IMM-FIELD-TYPE gets a new case and a paragraph with the list.
+  - The Future work item shrinks to extending the list.
+- **Tests:** a new `FieldTypeTrustedTypes.java` marks each trusted type as satisfied. It also has near-misses marked as violated: `BigInteger`, `BigDecimal`, `Optional<String>`, and a source class named `String`. The `name`, `age` and `PREFIX` fields in `FieldTypeOutsideSource.java` move to the new file. I searched the other test files, and none declares a field of a trusted type, so nothing else changes.
+
+The decisions document had changed on disk since I last read it, presumably your edits. My edit applied cleanly and left your changes in place.
+
+## 2026-11-24 18:33 EST
+
+### Prompt
+
+show me my changes
+
+### Response
+
+I was wrong earlier: you haven't made any changes to the decisions document. I read it through, and every line is something I wrote. The "modified on disk" warning appeared because I had updated the file with Python scripts run from the shell, which the editor tool doesn't track. It saw my own changes and reported them as outside edits.
+
+The file is git-ignored, so there's no history to diff against. Its current contents are:
+
+- 1.1, the IMM-LAMBDA rule
+- 1.2, the `Proxy` limitation
+- 1.3a, where a record component's result goes
+- 1.3b, annotations within a type
+- 1.4a, trusted library types
+- the Open list, which now includes 1.4's compiler-generated fields
+
+## 2026-11-24 18:37 EST
+
+### Prompt
+
+Let's address the synthetic fields gap in 1.4
+
+### Response
+
+I recorded decision 1.4b in [immutable-decisions.md](temp-results/immutable-decisions.md): only fields that appear in the source are checked. That means declared fields, record component fields and enum constants. Fields the compiler adds are ignored.
+
+**Why this is sound:**
+- **`$VALUES`:** source code can't refer to it. I checked with javac 26: `$VALUES[0] = B;` inside an enum fails with "cannot find symbol". And `values()` returns a copy, so the array itself never escapes. Only reflection or native code can change it, and Limitations already covers those.
+- **`this$0` and `val$x`:** these only exist in inner, local and anonymous classes. None of those can be immutable, because IMM-INNER and IMM-ANONYMOUS already reject them.
+
+**Why it's simple:** the analyzer only reads source, so it never sees these fields anyway. The decision just writes that down.
+
+**Spec changes to [Immutable.md](analyses/Immutable.md):**
+- One sentence in "Fields must be final" saying which fields are checked.
+- A Limitations bullet for fields the compiler adds.
+
+No tests change, because there is nothing in the source to mark.
+
+Section 1.4 now says both enum gaps are decided, and I removed 1.4 from the Open list.
+
+## 2026-11-24 18:39 EST
+
+### Prompt
+
+What is the fifth bullet in 1.4 trying to tell me?
+
+### Response
+
+The fifth bullet is a wording suggestion, not a gap. Nothing in the rules is wrong, and following it wouldn't change any results.
+
+**What it refers to.** The spec's list of classes that trivially satisfy IMM-SUBCLASS includes enums ([Immutable.md:92](analyses/Immutable.md#L92)). For an enum with constant bodies, the spec explains it like this: the enum isn't final, but no class declaration can extend an enum, so its only subclasses are those bodies, which IMM-ANONYMOUS reports.
+
+**What the review points out.** Since Java 17, the JLS (§8.9) gives that situation a name: an enum with at least one constant body is implicitly `sealed`, and its only permitted subclasses are the constant bodies. So instead of building the argument from scratch, the spec could say "the enum is implicitly sealed, and its permitted subclasses are its constant bodies." That's the same fact, citing the JLS's term.
+
+**Is it worth doing?** It ties in with open item 1.5, sealed hierarchies as a closed world. If we decide sealed classes get a "trivially satisfied" positive like `final` classes, this enum case becomes one example of that rule. If we stick with the proposal to skip 1.5, the reworded sentence would mention "sealed" in a list where ordinary sealed classes get no positive, which could confuse readers. Given the simplicity principle, I'd leave the sentence as it is.
+
+## 2026-11-24 18:41 EST
+
+### Prompt
+
+THe 6th bullet proposes additional tests.
+
+### Response
+
+The sixth bullet is about a test gap, not a spec gap.
+
+**What it's about.** Since Java 16, an enum constant's class body can declare `static` fields. Before that, anonymous classes couldn't have static members. I checked with javac: `RED { static int hits; }` compiles at release 26 and is rejected at release 15. The project compiles at release 26, so this is legal in our test code.
+
+**The spec already covers it.** The field rules apply to "all declared fields, both `static` and instance". And fields in a constant body "are checked as if they were declared in the enum itself". So `static int hits;` inside `RED` of an immutable enum is an IMM-FINAL-CLASS error, the same as a static non-final field in the enum itself.
+
+**What's missing is a test.** [FinalEnumConstantBody.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/finalfields/FinalEnumConstantBody.java) and [FieldTypeEnumConstantBody.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/fieldtypes/FieldTypeEnumConstantBody.java) only have instance fields in their constant bodies. An analyzer could visit instance fields in a constant body and skip static ones, and no test would catch it. That's easy to get wrong in practice, because a constant body is an anonymous class, and some parsers or analyzers model static members of anonymous classes differently.
+
+**Recommendation: add the tests.** It's cheap and needs no spec change. Each constant body would get one static field that passes and one that fails:
+
+- **In `RED` (`FinalEnumConstantBody.java`):**
+  - `static int hits;`: IMM-FINAL-CLASS violated
+  - `static final int MAX = 5;`: IMM-FINAL-CLASS satisfied
+- **In `HIGH` (`FieldTypeEnumConstantBody.java`):**
+  - `static final int[] LEVELS = {1, 2};`: IMM-FIELD-TYPE violated
+  - `static final int STEP = 1;`: IMM-FIELD-TYPE satisfied
+
+The non-immutable enums `Lamp` and `Volume` could each get a static field marked not applicable, for symmetry.
+
+Should I record this in the decisions document as 1.4c?
+
+## 2026-11-24 18:42 EST
+
+### Prompt
+
+yes, record it as 1.4c
+
+### Response
+
+I recorded this as decision 1.4c in [immutable-decisions.md](temp-results/immutable-decisions.md). No spec change, only new test cases:
+
+- **`FinalEnumConstantBody.java`:**
+  - In `RED`, `static int hits;` violates IMM-FINAL-CLASS, and `static final int MAX = 5;` satisfies it.
+  - In `ON` of the unmarked enum `Lamp`, `static int count;` is not applicable.
+- **`FieldTypeEnumConstantBody.java`:**
+  - In `HIGH`, `static final int[] LEVELS = {1, 2};` violates IMM-FIELD-TYPE, and `static final int STEP = 1;` satisfies it.
+  - In `LOUD` of the unmarked enum `Volume`, `static final int[] RANGE = {1, 2};` is not applicable.
+
+The intro to section 1.4 now says the review raised two enum gaps and proposed one test, and that all three are decided. Two of its six bullets just confirm the spec already covers something. The fifth bullet, the "implicitly sealed" wording, is the one we're leaving alone, and the document doesn't mention it.
+
+## 2026-11-24 18:45 EST
+
+### Prompt
+
+I have to step away now.  I want to record that we have processed the items in the analysis review through section 1.4.  I'm not sure of the best way to do that.  I also would like to preserve *your* working memory of the steps we have taken to get here (since the last pull requrest) so that I can pick up this work later.
+
+### Response
+
+Both are saved:
+
+- **Progress:** [immutable-decisions.md](temp-results/immutable-decisions.md) now says near the top that review items 1.1 to 1.4 are done and 1.5 is next. It also records that we kept the spec's wording rather than saying "implicitly sealed", and to revisit that if 1.5 changes how sealed classes are treated.
+- **My working context:** [immutable-session-notes.md](temp-results/immutable-session-notes.md) has:
+  - the branch state,
+  - the steps since PR #9,
+  - the three facts we confirmed with javac,
+  - how we've been working,
+  - the next steps.
+
+  I also saved a memory that points to both files, so a later session will know to read them first when you come back to issue #8.
+
+Before you go:
+
+- **These files exist only on this machine.** `temp-results/` is git-ignored, so nothing there is committed or pushed, and my memory is local too. If you might resume from another machine, or want a backup, I can post the decisions to issue #8 or commit them with `git add -f`.
+- **Git isn't fully up to date.** Commit cac42df is local and not pushed, and the prompt log has changed again since. Just say "commit and push" if you want that done now.
+
+## 2026-11-24 18:46 EST
+
+### Prompt
+
+commit and push, including claude log
