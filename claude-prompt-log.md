@@ -1722,3 +1722,168 @@ Before you go:
 ### Prompt
 
 commit and push, including claude log
+
+### Response
+
+I committed the updated prompt log as fbee941 and pushed it along with cac42df, so the branch matches GitHub.
+
+The files in `temp-results/` (the decisions document and the session notes) are still only on this machine, because that folder is git-ignored. The prompt log will show changes again soon, because it records this exchange too.
+
+## 2026-11-24 18:47 EST
+
+### Prompt
+
+How do make sure to return to this working context next time?
+
+### Response
+
+You have two options. Both depend on working on this machine in this project folder.
+
+**Option 1: start a new session (recommended).** My memory index is loaded automatically in every session in this project. It now points to the issue #8 notes. Start a new conversation and say something like:
+
+> Let's continue the issue #8 review.
+
+I'll read [immutable-session-notes.md](temp-results/immutable-session-notes.md) and [immutable-decisions.md](temp-results/immutable-decisions.md), then pick up at review item 1.5. A fresh session starts with a clean context, and those two files hold everything that matters.
+
+**Option 2: resume this exact conversation.** In the VS Code extension, open the past conversations list and pick this one. From a terminal, run `claude --resume` and choose it, or `claude --continue` if it was your most recent session. You get the full transcript back, but this conversation has already been compacted once, so it's long and partly summarized.
+
+Either way, the work depends on three local things:
+- the `temp-results/` files,
+- my memory folder under `~/.claude/projects/`,
+- the same project path.
+
+If you move to another machine, or clean out `temp-results/`, the notes are gone unless we post the decisions to issue #8 or commit them first.
+
+## 2026-11-24 21:05 EST
+
+### Prompt
+
+let's work on 1.5 sealed heirarchies
+
+### Response
+
+Review item 1.5 has two gaps.
+
+**Gap 1: should a sealed class count as a closed world?** The review notes that if every permitted subclass of a sealed class is in the source and is `final`, sealed or a record, the hierarchy is closed, just like a `final` class. It suggests giving such a class the "trivially satisfied" IMM-SUBCLASS positive.
+
+I recommend skipping it, and here's why:
+- **It adds nothing to soundness.** Each permitted subclass is already checked by IMM-SUBCLASS like any other subclass, so every error is caught either way. The positive would only be a nicer report.
+- **It isn't simple.** The analyzer would have to walk the permitted subclasses, follow nested `sealed` levels, and stop the moment it finds a `non-sealed` class.
+- **It isn't quite safe.** As the review itself notes, a permitted subclass in the same package can come from a separately compiled class file. A "closed" positive would then claim something the analysis didn't check.
+
+The spec only needs one sentence saying sealed classes aren't in the list. After the "trivially satisfies" list in [Immutable.md](analyses/Immutable.md), add:
+
+> A `sealed` class is not in this list. It receives no IMM-SUBCLASS result of its own, and each of its permitted subclasses is checked by IMM-SUBCLASS like any other subclass.
+
+**Gap 2: where does the error go when `permits` names an unmarked class?** The tests put the error only on the subclass's `extends` or `implements` clause: `Card` in `SubclassViolated.java` and `Feathers` in `SubinterfaceViolated.java`. That already follows the spec's general rule for where subtype results go, but the spec never says the `permits` clause itself gets nothing. Add to the paragraph on where results are reported:
+
+> The `permits` clause of a sealed type receives no result. An unmarked permitted subtype is reported on its own `extends` or `implements` clause, like any other subtype.
+
+**Effect on the tests:** none. `Payment`, `Cash` and `Card` in `SubclassViolated.java` already follow both points. I could add a `// NOTE:` on `Payment` saying it gets no trivial positive, but that's optional.
+
+Should I record this as 1.5a and 1.5b, with or without the NOTE?
+
+## 2026-11-24 21:07 EST
+
+### Prompt
+
+yes, record it as 1.5a and 1.5b, no note
+
+### Response
+
+I recorded 1.5a and 1.5b in [immutable-decisions.md](temp-results/immutable-decisions.md), with no `// NOTE:`:
+
+- **1.5a, no closed-world result for sealed classes:** a sealed class gets no "trivially satisfied" IMM-SUBCLASS result. Each of its permitted subclasses is checked like any other subclass. The spec gets one new paragraph after the trivially-satisfied list.
+- **1.5b, the `permits` clause gets no result:** an unmarked permitted subtype is reported on its own `extends` or `implements` clause. The spec gets one new sentence in the paragraph on where subtype results go.
+
+No tests change for either one.
+
+I also updated the progress markers to say that items 1.1 to 1.5 are processed and 1.6, generics, is next. That's in the decisions document, the session notes and my memory. I removed 1.5 from the Open list. The note on the "implicitly sealed" wording now points to 1.5a as its reason, so there's no longer a reminder to revisit it.
+
+## 2026-11-24 21:09 EST
+
+### Prompt
+
+let's work on 1.6 generics
+
+### Response
+
+Review item 1.6 has two open points. Everything else in it confirms the spec already covers it.
+
+**Point 1 (partial): the guarantee only holds when there are no errors anywhere.** The spec says a parameterized type like `Box<Loose>` is fine because `Box` can't have a field of type `T`, so a type argument can't add mutable state. That's true only if `Box` itself has no errors. A marked type still counts as immutable even when it has errors (the `Flawed` test relies on this). So the real guarantee is conditional: if the analysis reports no errors, every marked type is immutable. The spec never says that.
+
+The review raises the same point twice more: as 2.4, about what a positive result and the overall guarantee mean, and as 4.8, which is this exact sentence. I recommend we **defer this to 2.4** and decide it once there, covering 1.6 and 4.8 together. For now, 1.6a would just record that.
+
+**Point 2 (gap): a type variable can shadow a class name.**
+
+```java
+@Immutable class Label {}
+
+@Immutable
+class Shadow<Label> {
+    final Label value = null;   // Label is the type variable, not the class
+}
+```
+
+Inside `Shadow`, `Label` means the type parameter, so the field is an IMM-FIELD-TYPE error. A resolver that ignores type-parameter scopes would find the immutable class `Label` and wrongly report the field as satisfied. That's a soundness bug, not just a false error.
+
+Simplest fix: one spec sentence plus one test.
+
+- **Spec:** in IMM-FIELD-TYPE, add: "A field's type is resolved using Java's scoping rules (JLS §6.3, §6.4.1). In particular, a type parameter shadows a type of the same name, so in `class Shadow<Label>` the name `Label` means the type variable."
+- **Test:** in [FieldTypeTypeVariables.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/fieldtypes/FieldTypeTypeVariables.java), which already declares the immutable class `Label`, add `Shadow<Label>` with its field marked IMM-FIELD-TYPE violated: "the type variable Label shadows the immutable class Label".
+
+Other places a type variable could shadow a name are already ruled out. Fields can't use a method's type parameters. A static nested class can't see the enclosing class's type parameters. An inner class can't be immutable.
+
+Should I record point 1 as 1.6a (deferred to 2.4) and point 2 as 1.6b?
+
+## 2026-11-24 21:10 EST
+
+### Prompt
+
+yes, record them as 1.6a and 1.6b
+
+### Response
+
+I recorded both in [immutable-decisions.md](temp-results/immutable-decisions.md):
+
+- **1.6a, the guarantee holds only when there are no errors:** deferred to review item 2.4. On the Open list, 2.4 now notes that it should settle 1.6a and 4.8 together, because all three ask the spec to say this.
+- **1.6b, a type parameter shadows a class of the same name:** one sentence for IMM-FIELD-TYPE saying field types are resolved with Java's scoping rules, using `class Shadow<Label>` as the example. The new test goes in `FieldTypeTypeVariables.java`. Its expected-result comment is written out in the document, and its lines fit within 90 characters.
+
+I also updated the progress markers in the decisions document, the session notes and my memory: items 1.1 to 1.6 are processed, and 1.7, arrays, is next.
+
+## 2026-11-24 21:11 EST
+
+### Prompt
+
+let's work on 1.7 arrays
+
+### Response
+
+Review item 1.7 has nothing to decide. The review marks it fully covered, and I checked that [FieldTypeArrays.java](java/src/test/java/io/github/aarongreenhouse/testcases/immutable/fieldtypes/FieldTypeArrays.java) has every case it lists:
+
+- `int[]`, an array of an immutable class (`Tile[]`), and `int[][]`
+- brackets after the name (`int legacy[]`), with multiple declarators (`heights[]`), and mixed (`int[] … rows[]` makes `int[][]`)
+- array fields that are static, interface constants, record components, varargs record components (`int...`), and in an enum
+
+Arrays also come up in two places we've already decided: `T[]` is in the type-variable tests, and arrays with type annotations are part of 1.3b. I can't think of a missing case.
+
+I suggest recording 1.7 in the decisions document as a single line: "Covered. No change."
+
+Item 1.8 is also mostly settled. The review says strings, boxed types and other JDK types are all treated as not immutable, but decision 1.4a has since changed that for `String` and the boxed types. So 1.8 can be one line too: "Superseded by 1.4a." That would take us to 1.9, which does have a real proposal: a Limitations line about class initialization cycles.
+
+Should I record 1.7 and 1.8 that way and move on to 1.9?
+
+## 2026-11-24 21:12 EST
+
+### Prompt
+
+yes, record 1.7 and 1.8 that way
+
+### Response
+
+I recorded both in [immutable-decisions.md](temp-results/immutable-decisions.md):
+
+- **1.7 Arrays:** "Covered. No change." It lists the cases `FieldTypeArrays.java` already tests.
+- **1.8 Primitives, boxed types, String, JDK types:** "Superseded by 1.4a." That decision makes `String` and the boxed primitives trusted. Other JDK types are still not immutable.
+
+The progress markers in the decisions document, the session notes and my memory now say items 1.1 to 1.8 are processed. Next is 1.9, static vs instance fields, where the proposal is a Limitations line about class initialization cycles.
