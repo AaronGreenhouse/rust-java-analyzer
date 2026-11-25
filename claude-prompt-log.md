@@ -1887,3 +1887,131 @@ I recorded both in [immutable-decisions.md](temp-results/immutable-decisions.md)
 - **1.8 Primitives, boxed types, String, JDK types:** "Superseded by 1.4a." That decision makes `String` and the boxed primitives trusted. Other JDK types are still not immutable.
 
 The progress markers in the decisions document, the session notes and my memory now say items 1.1 to 1.8 are processed. Next is 1.9, static vs instance fields, where the proposal is a Limitations line about class initialization cycles.
+
+## 2026-11-24 21:13 EST
+
+### Prompt
+
+let's work on 1.9 static vs instance fields
+
+### Response
+
+Review item 1.9 is covered, apart from one suggested line for Limitations.
+
+**What's covered.** The field rules apply to static and instance fields alike, and the tests have static fields throughout.
+
+**The suggestion.** The Summary promises that an immutable type's static fields "cannot change after the type is initialized". *During* initialization, though, code can read a `static final` field before it has been assigned, so it sees `null` or `0` and later the real value. This is the static counterpart of the existing Limitations bullet on `this` escaping a constructor. I checked it with javac and java:
+
+```java
+final class Late {
+    static final Late FIRST = Peek.peek();     // runs while Late is being initialized
+    static final Late SECOND = new Late();
+}
+class Peek {
+    static Late snapshot;
+    static Late peek() { snapshot = Late.SECOND; return null; }
+}
+```
+
+Running it shows `Peek` saw `SECOND` as `null`, and `SECOND` was then non-null. The same happens across two classes whose static initializers refer to each other (JLS §12.4.2).
+
+**Is the guarantee broken?** Strictly, no. The change happens before `Late` has finished initializing, so the Summary's wording holds. But code can still see a static final field of an immutable type change, and readers might not catch that qualifier.
+
+**Recommendation.** Don't check it. Detecting it would mean analyzing initializer expressions and the order classes are initialized in. Instead, add a Limitations bullet after the `this` escape one:
+
+> - **Reading static fields during class initialization.** Code that runs while an immutable type is being initialized, including code in another class reached through a cycle of static initializers, can read a static final field before it is assigned and see its default value (JLS §12.4.2). The guarantee for static fields begins once the type is initialized.
+
+No tests are needed, because Limitations aren't tested.
+
+Should I record this as 1.9?
+
+## 2026-11-24 21:15 EST
+
+### Prompt
+
+yes, record it as 1.9
+
+### Response
+
+I recorded 1.9 in [immutable-decisions.md](temp-results/immutable-decisions.md). It's a new Limitations bullet, "Reading static fields during class initialization", which goes after the one on `this` escaping a constructor. The entry includes the `Late`/`Peek` example and the result from running it. No tests change.
+
+The session notes now list that run among the confirmed facts. The progress markers in the decisions document, the session notes and my memory say items 1.1 to 1.9 are processed.
+
+Next is 1.10, interface constants. The review marks it covered, but refers to 4.6, a real inconsistency: an immutable interface can't extend `Comparable`, but an immutable class can implement it.
+
+## 2026-11-24 21:18 EST
+
+### Prompt
+
+I want to commit the analysis review and our decisions document to the repo, but what is the best way to organize them considering that they relate to a particular point in time in the development of the analysis?
+
+### Response
+
+I'd treat them as dated records pinned to the commit they reviewed, kept separate from the spec. Here's a layout:
+
+```
+analyses/
+  Immutable.md                          ← the spec, the only source of truth
+  reviews/
+    immutable/
+      2026-11-issue-7-test-case-review.md
+      2026-11-issue-8-spec-review.md
+      2026-11-issue-8-decisions.md
+```
+
+**Why this layout:**
+
+- **Kept out of the spec.** Reviews and decisions are history, so they shouldn't be read as the current spec. A `reviews/` folder makes that obvious, and `Immutable.md` stays the one place that describes the analysis.
+- **Grouped by analysis.** `reviews/immutable/` leaves room for reviews of other analyses later.
+- **Named so they sort in order.** A date plus the issue number in each name puts the files in chronological order and links each to its GitHub discussion.
+- **One file per document, not one folder per review.** That's simpler, and each review has at most two files.
+
+**Pin each file to a point in time.** Add a short header at the top of each file:
+
+> **Reviewed:** `analyses/Immutable.md` at commit 90f737b, and the tests at commit 41bd13a · **Issue:** #8 · **Status:** in progress (items 1.1 to 1.9 decided)
+
+This matters most for the analysis review: its line numbers ("line 172", "line 83") refer to `Immutable.md` at 90f737b, which is still the current version. As soon as we change the spec, those line numbers will point at the wrong text. With the header, a reader can open the right version. I could make the commit a link to that version on GitHub, so it can be opened in one click.
+
+**Treat the decisions document differently.** The review is a snapshot and shouldn't be edited. The decisions document keeps changing until #8 is closed. When we apply the decisions to the spec and close #8, its status changes to "applied in <commit>", and it's frozen from then on.
+
+**What stays out of the repo:**
+
+- **The session notes:** they're my working context: workflow, the shell-edit gotcha, next steps. I'd keep them in `temp-results/`.
+- **The test case review from #7:** I'd include it, since it's the same kind of record and is already on issue #7. But it's optional.
+
+Committing also means updating the decisions document's link to the review, because the file names change.
+
+Should I go ahead with this layout, including the test case review from #7?
+
+## 2026-11-24 21:20 EST
+
+### Prompt
+
+first show me the test case review from #7
+
+### Response
+
+Here's the test case review from issue #7: [immutable-testcase-review.md](temp-results/immutable-testcase-review.md). It has five parts:
+
+- **Overview:** the tests were in good shape and compiled cleanly. The main problems were about 13 missing positive results, one comment in the wrong place, and gaps in the spec.
+- **A. Correctness (7 items):** positives missing on `final` classes and on implicit-`Object` superclasses, the misplaced IMM-INNER comment on `Step`, positives marked for rules a file doesn't test, notes that looked like result comments, and where IMM-ANONYMOUS comments go.
+- **B. Missing cases (11 items):** for example tests across packages, unmarked intermediate subinterfaces, marked types that have their own errors, and `Enum` and `Record` as field types.
+- **Spec gaps (8 items):** for example how many results an indirect subtype gets and where they go, `@Immutable` on an annotation interface, and fields in enum constant bodies.
+- **C. Simplification (7 items):** consistent comment conventions, helper files, removing duplicate cases and unneeded code, and consistent naming and wording.
+
+All of it was dealt with in PR #9: A, B and the spec gaps were fixed, and part of C was applied. For the C items you skipped, the reasons are recorded only in our conversation, not in the file.
+
+That affects how it would be committed:
+
+- **It's a closed record.** Its header would say "Status: resolved by PR #9", not "in progress".
+- **Its line numbers are already out of date.** They refer to the spec and tests before PR #9, probably at commit 20ee232, the last commit before the review fixes. I'd pin it to that commit, and I'd check that first, because you made manual fixes around then.
+- **One sentence is in my voice:** "I checked correctness items A1, A2 and A3 … I have not verified the other findings". It's accurate, but it reads as conversation. I'd reword it in the third person, or leave it as it is.
+- **It doesn't say what happened to each item.** If you want the committed copy to be useful on its own, I could add a short "Outcome" note to each section. For example: A fixed, B added, spec gaps resolved as decided, and C items 2, 5 and 6 skipped, with the reasons.
+
+Do you want it included in the commit, and if so with or without the outcome notes?
+
+## 2026-11-24 21:23 EST
+
+### Prompt
+
+include it with the outcome notes
