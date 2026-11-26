@@ -2015,3 +2015,34 @@ Do you want it included in the commit, and if so with or without the outcome not
 ### Prompt
 
 include it with the outcome notes
+
+### Response
+
+I committed the three records as b2619d5, along with the prompt log. I haven't pushed it. They're in [analyses/reviews/immutable/](analyses/reviews/immutable/):
+
+- [2026-11-issue-7-test-case-review.md](analyses/reviews/immutable/2026-11-issue-7-test-case-review.md):
+  - Pinned to commit 20ee232, the last commit before the review's fixes. Its status is "resolved by PR #9".
+  - I reworded the "I checked…" sentence in the third person.
+  - Each section now ends with an Outcome note. Parts A, B and the spec gaps each name the commit that dealt with them, and part C lists what was applied and why the rest was skipped.
+- [2026-11-issue-8-spec-review.md](analyses/reviews/immutable/2026-11-issue-8-spec-review.md):
+  - Pinned to the spec at 90f737b and the tests at 41bd13a, so its line numbers still lead to the right text.
+  - Its header marks it as a snapshot and notes the two findings that are wrong (`SportsCar` and `HIGH`/`RED`), with a link to the correction on #8. The rest of the file is unchanged.
+- [2026-11-issue-8-decisions.md](analyses/reviews/immutable/2026-11-issue-8-decisions.md):
+  - Its header says it's in progress and will be frozen once the decisions are applied.
+  - Its link to the review now uses the new file name.
+
+All the commit references in the headers link to that commit's version of the repository on GitHub.
+
+From now on I'll edit the decisions document in its new location. I deleted the old copies from `temp-results/`, so only the session notes are left there, and I updated them and my memory to point to the new files.
+
+## 2026-11-24 21:25 EST
+
+### Prompt
+
+push it
+
+### Response
+
+I pushed b2619d5, so the branch on GitHub now matches your local one.
+
+The prompt log has changed again since that commit, because it records each exchange. Those new entries aren't committed yet. I'll include them in the next commit.
