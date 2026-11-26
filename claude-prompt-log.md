@@ -1231,3 +1231,21 @@ The description is written for reviewers. It covers the correctness fixes, the d
 ### Prompt
 
 yes, commit and push
+
+## 2026-11-26 15:42 EST
+
+### Prompt
+
+is main up to date now?
+
+### Response
+
+Yes. Your local `main` matches GitHub's `main` exactly. You've also switched to it: `main` is the branch checked out right now.
+
+The README revision isn't on `main`. It's on the issue #8 branch, so if you're looking at the README on `main`, you'll see the old version until the #8 PR is merged.
+
+## 2026-11-26 15:43 EST
+
+### Prompt
+
+I don't want to merge all of the issue #8 branch yet, but I do want the version of Readme that is in issue 8 to be on the main branch
