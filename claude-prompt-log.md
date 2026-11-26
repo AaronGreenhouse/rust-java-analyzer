@@ -2046,3 +2046,30 @@ push it
 I pushed b2619d5, so the branch on GitHub now matches your local one.
 
 The prompt log has changed again since that commit, because it records each exchange. Those new entries aren't committed yet. I'll include them in the next commit.
+
+## 2026-11-26 15:36 EST
+
+### Prompt
+
+Let's revise the Readme file.  It should explicitly note that the claude interaction is logged and include a link to the log.
+
+Mkae sure the readme includes the following infomraiont:  The goal of this project is build a simple static analyzer for java programs, written in rust.  The chose analysis is "class immutability".  Currently the project state is that I'm filling out the exact specification for the analysis.  This is an interactive process with Claude.  The Claude prompt/response log is recorded.  Several design and associated design review documents are recorded.  The intent is then to use the analysis description to drive a rust implementation.  The secondary purpose of this project (besides Claude Code experience) is to drive my Rust experience.
+
+### Response
+
+I rewrote [README.md](README.md) to include everything you listed:
+
+- **Overview:** says the goal is a simple static analyzer for Java programs, written in Rust, and that the chosen analysis is class immutability. It then lists the project's other two purposes: experience with Claude Code, and building your Rust skills.
+- **Status:** says you're filling out the exact specification interactively with Claude, that the reviews and decisions are recorded, and that the specification will then drive a Rust implementation. It also says there's no Rust code yet.
+- **Development with Claude:** says in bold that the interaction is logged, links to [claude-prompt-log.md](claude-prompt-log.md) and the hook that writes it, and says the log is committed along with the work. It also lists the recorded design documents: the analysis description, the design reviews and the decision records.
+- **Tables:** the layout table has a new row for [analyses/reviews/](analyses/reviews/), and the Analyses table has a new column linking to the reviews of the immutable analysis.
+
+I changed one existing claim. The old README said `@Immutable` "can be checked with purely syntactic checks". The new one says "from declarations alone: a syntax tree plus name resolution". That matches the spec, which says the analysis isn't purely syntactic, and the issue #8 review.
+
+I left the rest of the existing text alone, including the logo and your first-person voice ("As far as I know"). I haven't committed anything.
+
+## 2026-11-26 15:37 EST
+
+### Prompt
+
+commit and push, including claude log
