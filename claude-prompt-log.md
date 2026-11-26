@@ -2084,3 +2084,55 @@ I committed the README on the issue #8 branch as 0bad7dc and pushed it. Here's w
 - **The README's links work on this branch,** including the links to `analyses/reviews/`. They'll reach `main` with the PR for #8.
 
 Your local `main` is still 8 commits behind GitHub. If you want it current, `git checkout main && git pull` will fast-forward it.
+
+## 2026-11-26 15:42 EST
+
+### Prompt
+
+is main up to date now?
+
+### Response
+
+Yes. Your local `main` matches GitHub's `main` exactly. You've also switched to it: `main` is the branch checked out right now.
+
+The README revision isn't on `main`. It's on the issue #8 branch, so if you're looking at the README on `main`, you'll see the old version until the #8 PR is merged.
+
+## 2026-11-26 15:43 EST
+
+### Prompt
+
+I don't want to merge all of the issue #8 branch yet, but I do want the version of Readme that is in issue 8 to be on the main branch
+
+### Response
+
+I opened [PR #10](https://github.com/AaronGreenhouse/rust-java-analyzer/pull/10) to bring the new README onto `main`. Nothing else from the issue #8 branch is included.
+
+- **What's in it:** a new branch, `update-readme-project-goals`, made from the current `main`. It has one commit with the README copied exactly from the issue #8 branch, plus `main`'s prompt log, which had new entries.
+- **Known gap:** until the issue #8 branch is merged, the README's links to `analyses/reviews/` are broken on `main`. The PR description says so.
+
+You're now on `update-readme-project-goals`, not `main`.
+
+The prompt log now has separate new entries on `main` and on the #8 branch. Merging #8 after this PR will probably give a conflict in `claude-prompt-log.md`. It should be easy to resolve, because both sides only add entries at the end, so the fix is to keep both sets.
+
+## 2026-11-26 15:45 EST
+
+### Prompt
+
+switch back to the issue #8 branch
+
+### Response
+
+You're on the issue #8 branch again, and it's in sync with GitHub.
+
+Switching branches meant repairing the prompt log by hand. The logging hook writes to whichever branch is checked out, so the three exchanges from while you were on `main` and the README branch had been split between branches. I copied them into this branch's log in the right order: "is main up to date", the PR #10 request and its reply, and this request.
+
+That's the only uncommitted change. It will go into the next commit as usual.
+
+The log will keep splitting this way whenever you switch branches with entries not yet committed. If you switch often, it would help to commit the log before each switch.
+
+## 2026-11-26 15:47 EST
+
+### Prompt
+
+<ide_opened_file>The user opened the file /Users/aaron/VSCode Examples/rust-java-analyzer/claude-prompt-log.md in the IDE. This may or may not be related to the current task.</ide_opened_file>
+commit and push, including claude log
